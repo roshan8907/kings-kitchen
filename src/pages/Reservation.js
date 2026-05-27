@@ -174,7 +174,7 @@ function Reservation() {
 
           <div className="reservation-wrapper">
 
-            {/* LEFT SIDE */}
+            {}
             <div className="reservation-form-section">
 
               <h1>Book a Table</h1>
