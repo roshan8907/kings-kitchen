@@ -174,7 +174,7 @@ function Reservation() {
 
           <div className="reservation-wrapper">
 
-            {}
+            
             <div className="reservation-form-section">
 
               <h1>Book a Table</h1>
