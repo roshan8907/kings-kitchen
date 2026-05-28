@@ -3,19 +3,19 @@ const teamMembers = [
     id: 1,
     name: "Chef Daniel",
     role: "Head Chef",
-    image: "/images/chef1.jpg",
+    image: "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
   },
   {
     id: 2,
     name: "Sophia Lee",
     role: "Restaurant Manager",
-    image: "/images/manager.jpg",
+    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
   },
   {
     id: 3,
     name: "Michael Brown",
     role: "Customer Service",
-    image: "/images/service.jpg",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
   },
 ];
 
@@ -45,7 +45,7 @@ function AboutUs() {
         >
           About Us
         </h1>
- <p
+        <p
           style={{
             maxWidth: "800px",
             margin: "0 auto",
@@ -59,6 +59,7 @@ function AboutUs() {
           experience for our customers.
         </p>
       </div>
+      
       {/* Story Section */}
       <div
         style={{
@@ -71,8 +72,8 @@ function AboutUs() {
         }}
       >
         <img
-          src="/images/restaurant.jpg"
-          alt="Restaurant"
+          src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+          alt="Restaurant interior"
           style={{
             width: "400px",
             maxWidth: "100%",
@@ -81,7 +82,7 @@ function AboutUs() {
             boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
           }}
         />
-<div
+        <div
           style={{
             maxWidth: "500px",
           }}
@@ -94,7 +95,6 @@ function AboutUs() {
           >
             Our Story
           </h2>
-
           <p
             style={{
               color: "#fffdfd",
@@ -107,10 +107,11 @@ function AboutUs() {
             excellent service, and creating a warm atmosphere where everyone
             feels welcome.
           </p>
-          </div>
+        </div>
       </div>
+      
       {/* Team Section */}
-       <div>
+      <div>
         <h2
           style={{
             textAlign: "center",
@@ -121,9 +122,8 @@ function AboutUs() {
         >
           Meet Our Team
         </h2>
-
         <div
-        style={{
+          style={{
             display: "flex",
             flexWrap: "wrap",
             justifyContent: "center",
@@ -151,8 +151,12 @@ function AboutUs() {
                   height: "250px",
                   objectFit: "cover",
                 }}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "https://via.placeholder.com/280x250?text=Image+Not+Found";
+                }}
               />
-<h3
+              <h3
                 style={{
                   marginTop: "20px",
                   color: "#333",
@@ -160,7 +164,6 @@ function AboutUs() {
               >
                 {member.name}
               </h3>
-
               <p
                 style={{
                   color: "#777",
