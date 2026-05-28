@@ -1,17 +1,55 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
 
-function Register() {
+function Register(){
+
+// ADD STATES
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
+
+// CREATE FUNCTION
+
+const handleRegister = async () => {
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+    alert("User Created Successfully");
+  } catch (error) {
+    alert(error.message);
+  }
+};
+
+
+
   return (
     <div style={styles.registerContainer}>
       <div style={styles.overlay}>
         <div style={styles.formBox}>
           <h2 style={styles.title}>Create Your Account</h2>
 
-          <input type="text" placeholder="Enter Full Name" style={styles.input} />
-          <input type="email" placeholder="Enter Email" style={styles.input} />
-          <input type="password" placeholder="Create Password" style={styles.input} />
+          <input
+        type="text"
+        placeholder="Enter Full Name"
+        style={styles.input}
+      />
 
-          <button style={styles.btn}>Register</button>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Enter Email"
+        style={styles.input}
+      />
+
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Enter Password"
+        style={styles.input}
+      />
+          <button onClick={handleRegister} style={styles.btn}>Register</button>
 
           <p style={styles.text}>
             Already have an account?{" "}
@@ -22,6 +60,10 @@ function Register() {
     </div>
   );
 }
+
+
+
+
 const styles = {
   registerContainer: {
     height: "100vh",
