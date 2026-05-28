@@ -95,7 +95,7 @@ function Menu() {
     getMenu();
   };
 
-  // EDIT
+  // EDIT 
   const handleEdit = (item) => {
     setName(item.name);
     setCategory(item.category);
