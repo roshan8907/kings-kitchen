@@ -23,7 +23,7 @@ function AboutUs() {
   return (
     <div
       style={{
-        backgroundColor: "#262525",
+        backgroundColor: "#000000",
         minHeight: "100vh",
         padding: "40px 20px",
         fontFamily: "Arial, sans-serif",
@@ -39,7 +39,7 @@ function AboutUs() {
         <h1
           style={{
             fontSize: "48px",
-            color: "#f5ad1f",
+            color: "#edf54e",
             marginBottom: "15px",
           }}
         >
@@ -50,7 +50,7 @@ function AboutUs() {
             maxWidth: "800px",
             margin: "0 auto",
             fontSize: "18px",
-            color: "#f9f9f9",
+            color: "#ebe5e5",
             lineHeight: "1.8",
           }}
         >
@@ -89,7 +89,7 @@ function AboutUs() {
         >
           <h2
             style={{
-              color: "#f5ad1f",
+              color: "#e2ee41",
               marginBottom: "20px",
             }}
           >
@@ -97,7 +97,7 @@ function AboutUs() {
           </h2>
           <p
             style={{
-              color: "#ffffff",
+              color: "#fffdfd",
               lineHeight: "1.8",
               fontSize: "17px",
             }}
@@ -115,7 +115,7 @@ function AboutUs() {
         <h2
           style={{
             textAlign: "center",
-            color: "#f5ad1f",
+            color: "#f1e83f",
             marginBottom: "40px",
             fontSize: "36px",
           }}
