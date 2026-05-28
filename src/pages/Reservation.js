@@ -282,7 +282,6 @@ function Reservation() {
 
               </form>
             </div>
-
             {/* RIGHT SIDE */}
             <div className="reservation-info-section">
 
