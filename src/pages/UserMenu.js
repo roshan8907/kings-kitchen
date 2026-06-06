@@ -22,7 +22,7 @@ function UserMenu() {
 
   useEffect(() => {
     getMenu();
-  }, []);
+  }, [getMenu]);
 
   const filteredItems = items.filter((item) => {
   return (

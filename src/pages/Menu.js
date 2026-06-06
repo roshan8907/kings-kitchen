@@ -49,7 +49,7 @@ function Menu() {
 
   useEffect(() => {
     getMenu();
-  }, []);
+  }, [getMenu]);
 
   // SAVE / UPDATE
   const handleSave = async () => {
