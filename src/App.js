@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import ReservationMenu from "./pages/ReservationMenu";
 import MyReservationStatus from "./pages/MyReservationStatus";
 import AdminReservation from "./pages/AdminReservation";
+import AdminUsers from "./pages/AdminUsers";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -54,6 +55,14 @@ function App() {
   element={
     <ProtectedRoute>
       <AdminReservation />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/admin/users"
+  element={
+    <ProtectedRoute>
+      <AdminUsers />
     </ProtectedRoute>
   }
 />

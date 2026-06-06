@@ -65,7 +65,7 @@ function AdminUsers() {
         <tbody>
           {users.map((user) => (
             <tr key={user.id}>
-              <td>{user.fullName}</td>
+<td>{user.fullName || user.name || "No Name"}</td>
               <td>{user.email}</td>
               <td>
                 <span
