@@ -2,19 +2,40 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
+import { useNavigate } from "react-router-dom";
+import { db } from "../firebase";
+import { doc, setDoc } from "firebase/firestore";
 
 function Register(){
 
+
+  const navigate = useNavigate();
 // ADD STATES
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
+const [fullName, setFullName] = useState("");
 
 // CREATE FUNCTION
 
 const handleRegister = async () => {
   try {
-    await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential =
+      await createUserWithEmailAndPassword(auth, email, password);
+
+    await setDoc(
+      doc(db, "users", userCredential.user.uid),
+      {
+        uid: userCredential.user.uid,
+        fullName: fullName,
+        email: email,
+        status: "active",
+        role: "user",
+      }
+    );
+
     alert("User Created Successfully");
+    navigate("/login");
+
   } catch (error) {
     alert(error.message);
   }
@@ -28,11 +49,13 @@ const handleRegister = async () => {
         <div style={styles.formBox}>
           <h2 style={styles.title}>Create Your Account</h2>
 
-          <input
-        type="text"
-        placeholder="Enter Full Name"
-        style={styles.input}
-      />
+        <input
+  type="text"
+  value={fullName}
+  onChange={(e) => setFullName(e.target.value)}
+  placeholder="Enter Full Name"
+  style={styles.input}
+/>
 
       <input
         type="email"

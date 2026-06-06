@@ -207,7 +207,7 @@ function Menu() {
 
                   <td style={styles.td}>{item.category}</td>
 
-                  <td style={styles.td}>₹{item.price}</td>
+                  <td style={styles.td}>${item.price}</td>
 
                   <td style={styles.td}>
                     <span

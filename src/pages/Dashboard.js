@@ -9,8 +9,12 @@ function Dashboard() {
           <Link to="/admin/menu" style={styles.card}>
             🍽 Manage Menu
           </Link>
-          <Link to="/admin/reservations" style={styles.card}>
+          <Link to="/admin/reservation" style={styles.card}>
             📅 Manage Reservations
+          </Link>
+
+        <Link to="/admin/users" style={styles.card}>
+            👥 Manage User 
           </Link>
         </div>
       </div>

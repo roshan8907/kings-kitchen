@@ -1,14 +1,15 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
-  signInWithPopup
+  signInWithPopup,
+  signOut
 } from "firebase/auth";
 
-import { auth, googleProvider } from "../firebase";
+import { setDoc, doc, getDoc } from "firebase/firestore";
+import { auth, db, googleProvider } from "../firebase";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -16,7 +17,7 @@ function Login() {
   const navigate = useNavigate();
 
   // EMAIL LOGIN
- const handleLogin = async () => {
+const handleLogin = async () => {
   try {
     const userCredential = await signInWithEmailAndPassword(
       auth,
@@ -24,30 +25,70 @@ function Login() {
       password
     );
 
-    // ADMIN
-    if (userCredential.user.email === "admin@gmail.com") {
-      navigate("/admin");
+    const user = userCredential.user;
+
+    // 🔥 1. ADMIN CHECK FIRST (IMPORTANT FIX)
+    if (user.email === "admin@gmail.com") {
+      navigate("/dashboard");
+      return;
     }
 
-    // NORMAL USER
-    else {
-      navigate("/");
+    // 🔍 2. NORMAL USER → CHECK FIRESTORE
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      alert("User not found in database");
+      await signOut(auth);
+      return;
     }
+
+    const userData = userSnap.data();
+
+    // 🚫 BLOCK CHECK
+    if (userData.status === "blocked") {
+      alert("🚫 Your account is blocked by admin");
+      await signOut(auth);
+      return;
+    }
+
+    // ✅ NORMAL USER
+    navigate("/");
 
   } catch (error) {
     alert(error.message);
   }
 };
-  // GOOGLE LOGIN
-  const handleGoogleLogin = async () => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log(result.user);
-      alert("Google Login Successful");
-    } catch (error) {
-      alert(error.message);
+
+// GOOGLE LOGIN
+ const handleGoogleLogin = async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+
+    const user = result.user;
+
+    // 🔍 CHECK IF USER EXISTS IN FIRESTORE
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      // 🆕 CREATE USER IN FIRESTORE
+      await setDoc(userRef, {
+        uid: user.uid,
+        fullName: user.displayName,
+        email: user.email,
+        status: "active",
+        role: "user",
+      });
     }
-  };
+
+    alert("Google Login Successful");
+    navigate("/");
+
+  } catch (error) {
+    alert(error.message);
+  }
+};
 
 
   // RESET PASSWORD

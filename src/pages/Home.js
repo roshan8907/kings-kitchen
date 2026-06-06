@@ -1,4 +1,10 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
+
+
 function Home() {
+  const navigate = useNavigate();
+
   return (
 <div>
     {/*hero sectio n  or welcome section */}  
@@ -9,7 +15,10 @@ function Home() {
           Experience unforgettable dining, premium cuisine, and warm hospitality.
         </p>
 
-        <button style={styles.btn}>Book a Table</button>
+<button style={styles.btn} onClick={() => navigate("/reservation")} >
+  Book a Table
+</button>
+
       </div>
     </div>
 
@@ -32,7 +41,24 @@ function Home() {
           </div>
         </div>
       </div>
+
+      <div style={{ marginTop: "40px" }}>
+  <h2 style={{ color: "#D4AF37", marginBottom: "10px" }}>
+    📍 King's Kitchen Location
+  </h2>
+
+  <iframe
+    title="Otago Polytechnic Auckland"
+    width="100%"
+    height="350"
+    style={{ border: 0 }}
+    loading="lazy"
+    allowFullScreen
+   src="https://www.google.com/maps?q=Level+3+350+Queen+Street+Auckland+Otago+Polytechnic&output=embed"
+  />
+</div>
     </div>
+
 
 
 
@@ -40,6 +66,7 @@ function Home() {
 
   );
 }
+
 
 const styles = {
   hero:{

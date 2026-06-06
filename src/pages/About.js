@@ -1,41 +1,22 @@
 const teamMembers = [
-
   {
-
     id: 1,
-
     name: "Chef Daniel",
-
     role: "Head Chef",
-
-    image: "/images/chef1.jpg",
-
+    image: "https://images.unsplash.com/photo-1583394293214-28ded15ee548?w=800",
   },
-
   {
-
     id: 2,
-
     name: "Sophia Lee",
-
     role: "Restaurant Manager",
-
-    image: "/images/manager.jpg",
-
+    image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800",
   },
-
   {
-
     id: 3,
-
     name: "Michael Brown",
-
     role: "Customer Service",
-
-    image: "/images/service.jpg",
-
+    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800",
   },
-
 ];
 
  
@@ -88,7 +69,7 @@ function AboutUs() {
 
           <img
 
-            src="/images/restaurant.jpg"
+            src="/img/restaurant.jpg"
 
             alt="Restaurant"
 

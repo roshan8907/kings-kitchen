@@ -1,7 +1,15 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { db } from "../firebase";
+import { addDoc, collection } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 function Reservation() {
+
+  const navigate = useNavigate();
+
   const [reservation, setReservation] = useState({
+
     fullName: "",
     email: "",
     phone: "",
@@ -10,7 +18,6 @@ function Reservation() {
     guests: "",
     request: "",
   });
-
   const handleChange = (e) => {
     setReservation({
       ...reservation,
@@ -18,17 +25,77 @@ function Reservation() {
     });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    console.log(reservation);
+  const auth = getAuth();
+  const user = auth.currentUser;
 
-    alert("Reservation Submitted!");
+  if (!user) {
+    alert("Please login first to make a reservation");
+    navigate("/login"); 
+    return;
+  }
+
+  const bookingData = {
+    ...reservation,
+    userId: user.uid,
+    email: user.email,
+    status: "pending",
+    createdAt: new Date(),
   };
+
+  await addDoc(collection(db, "reservations"), bookingData);
+
+  navigate("/reservation-menu", {
+    state: reservation,
+  });
+
+
+  return (
+
+    <div style={{ padding: 20, background: "#111", color: "white", minHeight: "100vh" }}>
+
+      <h1>Book a Table</h1>
+
+      <form onSubmit={handleSubmit}>
+
+        <input name="fullName" placeholder="Full Name" onChange={handleChange} required />
+
+        <input name="email" placeholder="Email" onChange={handleChange} required />
+
+        <input name="phone" placeholder="Phone" onChange={handleChange} required />
+
+        <input type="date" name="date" onChange={handleChange} required />
+
+        <select name="time" onChange={handleChange} required>
+
+          <option value="">Select Time</option>
+
+          <option>5 PM</option>
+
+          <option>6 PM</option>
+
+          <option>7 PM</option>
+
+        </select>
+
+        <select name="guests" onChange={handleChange} required>
+
+          <option value="">Guests</option>
+          <option>1</option>
+          <option>2</option>
+          <option>3</option>
+        </select>
+        <textarea name="request" placeholder="Request" onChange={handleChange} />
+        <button type="submit">Continue</button>
+      </form>
+    </div>
+  );
+}
 
   return (
     <>
-      {/* CSS INSIDE COMPONENT */}
       <style>{`
         * {
           margin: 0;
@@ -171,75 +238,39 @@ function Reservation() {
 
       <div className="reservation-page">
         <div className="reservation-overlay">
-
           <div className="reservation-wrapper">
 
-            
+            {/* LEFT FORM */}
             <div className="reservation-form-section">
-
               <h1>Book a Table</h1>
 
-              <p>
-                Fill in the details below to reserve your table.
-              </p>
+              <p>Fill in the details below to reserve your table.</p>
 
               <form onSubmit={handleSubmit}>
 
                 <div className="form-group">
                   <label>Full Name</label>
-
-                  <input
-                    type="text"
-                    name="fullName"
-                    placeholder="Enter your name"
-                    onChange={handleChange}
-                    required
-                  />
+                  <input name="fullName" onChange={handleChange} required />
                 </div>
 
                 <div className="form-group">
                   <label>Email</label>
-
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="Enter your email"
-                    onChange={handleChange}
-                    required
-                  />
+                  <input type="email" name="email" onChange={handleChange} required />
                 </div>
 
                 <div className="form-group">
                   <label>Phone Number</label>
-
-                  <input
-                    type="text"
-                    name="phone"
-                    placeholder="Enter your phone number"
-                    onChange={handleChange}
-                    required
-                  />
+                  <input name="phone" onChange={handleChange} required />
                 </div>
 
                 <div className="form-group">
                   <label>Date</label>
-
-                  <input
-                    type="date"
-                    name="date"
-                    onChange={handleChange}
-                    required
-                  />
+                  <input type="date" name="date" onChange={handleChange} required />
                 </div>
 
                 <div className="form-group">
                   <label>Time</label>
-
-                  <select
-                    name="time"
-                    onChange={handleChange}
-                    required
-                  >
+                  <select name="time" onChange={handleChange} required>
                     <option value="">Select Time</option>
                     <option>5:00 PM</option>
                     <option>6:00 PM</option>
@@ -250,12 +281,7 @@ function Reservation() {
 
                 <div className="form-group">
                   <label>Number of Guests</label>
-
-                  <select
-                    name="guests"
-                    onChange={handleChange}
-                    required
-                  >
+                  <select name="guests" onChange={handleChange} required>
                     <option value="">Select Guests</option>
                     <option>1 Guest</option>
                     <option>2 Guests</option>
@@ -266,14 +292,8 @@ function Reservation() {
                 </div>
 
                 <div className="form-group">
-                  <label>Special Request (Optional)</label>
-
-                  <textarea
-                    name="request"
-                    placeholder="Write your request..."
-                    rows="5"
-                    onChange={handleChange}
-                  ></textarea>
+                  <label>Special Request</label>
+                  <textarea name="request" onChange={handleChange}></textarea>
                 </div>
 
                 <button type="submit">
@@ -282,9 +302,9 @@ function Reservation() {
 
               </form>
             </div>
+
             {/* RIGHT SIDE */}
             <div className="reservation-info-section">
-
               <div className="reservation-image">
                 <img
                   src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"
@@ -294,17 +314,29 @@ function Reservation() {
 
               <div className="reservation-note">
                 <h3>Note</h3>
-
                 <p>
-                  Your reservation request will be confirmed
-                  by our reception team.
+                  After submitting, you will select your food menu and then confirm booking.
                 </p>
               </div>
 
+              <button
+  onClick={() => navigate("/my-reservations")}
+  style={{
+    marginTop: "15px",
+    width: "100%",
+    padding: "12px",
+    background: "#D4AF37",
+    border: "none",
+    borderRadius: "8px",
+    fontWeight: "bold",
+    cursor: "pointer",
+  }}
+>
+  Check Reservation Status
+</button>
             </div>
 
           </div>
-
         </div>
       </div>
     </>
