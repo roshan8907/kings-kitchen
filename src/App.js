@@ -1,7 +1,8 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import { Navigate } from "react-router-dom";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -16,22 +17,32 @@ import MyReservationStatus from "./pages/MyReservationStatus";
 import AdminReservation from "./pages/AdminReservation";
 import AdminUsers from "./pages/AdminUsers";
 
-import ProtectedRoute from "./components/ProtectedRoute";
-
 function App() {
   return (
     <div>
       <Navbar />
 
       <Routes>
+        {/* PUBLIC PAGES */}
         <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/menu" element={<UserMenu />} />
-        <Route path="/reservation" element={<Reservation />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
 
+        <Route path="/about" element={<About />} />
+
+        <Route path="/menu" element={<UserMenu />} />
+
+        <Route path="/reservation" element={<Reservation />} />
+
+        <Route path="/login" element={<Login />} />
+
+        <Route path="/register" element={<Register />} />
+
+        {/* ADMIN REDIRECT */}
+        <Route
+          path="/admin"
+          element={<Navigate to="/dashboard" replace />}
+        />
+
+        {/* ADMIN DASHBOARD */}
         <Route
           path="/dashboard"
           element={
@@ -41,42 +52,63 @@ function App() {
           }
         />
 
-<Route
-  path="/admin/menu"
-  element={
-    <ProtectedRoute>
-      <Menu />
-    </ProtectedRoute>
-  }
-/>
+        {/* ADMIN MENU */}
+        <Route
+          path="/admin/menu"
+          element={
+            <ProtectedRoute>
+              <Menu />
+            </ProtectedRoute>
+          }
+        />
 
-<Route
-  path="/admin/reservation"
-  element={
-    <ProtectedRoute>
-      <AdminReservation />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/admin/users"
-  element={
-    <ProtectedRoute>
-      <AdminUsers />
-    </ProtectedRoute>
-  }
-/>
+        {/* ADMIN RESERVATIONS */}
+        <Route
+          path="/admin/reservation"
+          element={
+            <ProtectedRoute>
+              <AdminReservation />
+            </ProtectedRoute>
+          }
+        />
 
+        {/* ADMIN USERS */}
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute>
+              <AdminUsers />
+            </ProtectedRoute>
+          }
+        />
 
-        <Route path="/reservation-menu" element={<ReservationMenu />} />
-        <Route path="/my-reservations" element={<MyReservationStatus />} />
+        {/* RESERVATION MENU
+            A06 SECURITY FIX:
+            User must be logged in before accessing this step.
+        */}
+        <Route
+          path="/reservation-menu"
+          element={
+            <ProtectedRoute>
+              <ReservationMenu />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* USER RESERVATION HISTORY */}
+        <Route
+          path="/my-reservations"
+          element={
+            <ProtectedRoute>
+              <MyReservationStatus />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
 
       <Footer />
     </div>
   );
 }
-
-
 
 export default App;
