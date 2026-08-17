@@ -14,7 +14,7 @@ function MyReservations() {
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
 
-  // NEW FEATURE: Reservation history filters
+  // Muskan Feature: Search, status filter and sorting
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
@@ -37,6 +37,7 @@ function MyReservations() {
       );
 
       setEditingId(null);
+
       alert("Reservation updated successfully!");
     } catch (error) {
       console.error("Update error:", error);
@@ -44,7 +45,7 @@ function MyReservations() {
     }
   };
 
-  // CANCEL RESERVATION
+  // Roshan Feature: CANCEL RESERVATION
   const handleCancel = async (id) => {
     const confirmed = window.confirm(
       "Are you sure you want to cancel this reservation?"
@@ -109,8 +110,8 @@ function MyReservations() {
     fetchData();
   }, []);
 
-  // NEW FEATURE:
-  // Search, filter and sort reservations
+  // Muskan Feature:
+  // SEARCH + STATUS FILTER + SORT
   const displayedBookings = bookings
     .filter((booking) => {
       const search = searchTerm.toLowerCase().trim();
@@ -164,7 +165,7 @@ function MyReservations() {
     >
       <h2>My Reservation Status</h2>
 
-      {/* NEW FEATURE: FILTER CONTROLS */}
+      {/* SEARCH / FILTER / SORT */}
       <div style={styles.filterContainer}>
         <input
           type="text"
@@ -176,9 +177,7 @@ function MyReservations() {
 
         <select
           value={statusFilter}
-          onChange={(e) =>
-            setStatusFilter(e.target.value)
-          }
+          onChange={(e) => setStatusFilter(e.target.value)}
           style={styles.select}
         >
           <option value="all">All Statuses</option>
@@ -189,17 +188,11 @@ function MyReservations() {
 
         <select
           value={sortOrder}
-          onChange={(e) =>
-            setSortOrder(e.target.value)
-          }
+          onChange={(e) => setSortOrder(e.target.value)}
           style={styles.select}
         >
-          <option value="newest">
-            Newest First
-          </option>
-          <option value="oldest">
-            Oldest First
-          </option>
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
         </select>
 
         <button
@@ -222,48 +215,45 @@ function MyReservations() {
           No reservations match your search or filter.
         </div>
       ) : (
-        displayedBookings.map((b) => (
-          <div
-            key={b.id}
-            style={styles.card}
-          >
-            <p>
-              <strong>Name:</strong>{" "}
-              {b.fullName}
-            </p>
+        displayedBookings.map((b) => {
+          const isCancelled =
+            b.status === "Cancelled" ||
+            b.status === "cancelled";
 
-            <p>
-              <strong>Date:</strong> {b.date}
-            </p>
+          return (
+            <div key={b.id} style={styles.card}>
+              <p>
+                <strong>Name:</strong> {b.fullName}
+              </p>
 
-            <p>
-              <strong>Time:</strong> {b.time}
-            </p>
+              <p>
+                <strong>Date:</strong> {b.date}
+              </p>
 
-            <p>
-              <strong>Guests:</strong>{" "}
-              {b.guests}
-            </p>
+              <p>
+                <strong>Time:</strong> {b.time}
+              </p>
 
-            <p>
-              <strong>Status:</strong>{" "}
-              <span
-                style={{
-                  color:
-                    b.status === "Cancelled" ||
-                    b.status === "cancelled"
+              <p>
+                <strong>Guests:</strong> {b.guests}
+              </p>
+
+              <p>
+                <strong>Status:</strong>{" "}
+                <span
+                  style={{
+                    color: isCancelled
                       ? "#ff4d4d"
                       : "#D4AF37",
-                  fontWeight: "bold",
-                }}
-              >
-                {b.status}
-              </span>
-            </p>
+                    fontWeight: "bold",
+                  }}
+                >
+                  {b.status}
+                </span>
+              </p>
 
-            {/* EDIT BUTTON */}
-            {b.status !== "Cancelled" &&
-              b.status !== "cancelled" && (
+              {/* EDIT */}
+              {!isCancelled && (
                 <button
                   onClick={() => {
                     setEditingId(b.id);
@@ -279,9 +269,8 @@ function MyReservations() {
                 </button>
               )}
 
-            {/* CANCEL BUTTON */}
-            {b.status !== "Cancelled" &&
-              b.status !== "cancelled" && (
+              {/* CANCEL */}
+              {!isCancelled && (
                 <button
                   onClick={() => handleCancel(b.id)}
                   style={styles.cancelButton}
@@ -290,79 +279,75 @@ function MyReservations() {
                 </button>
               )}
 
-            {/* EDIT FORM */}
-            {editingId === b.id && (
-              <div style={styles.editForm}>
-                <input
-                  value={editData.date || ""}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      date: e.target.value,
-                    })
-                  }
-                  type="date"
-                />
+              {/* EDIT FORM */}
+              {editingId === b.id && (
+                <div style={styles.editForm}>
+                  <input
+                    value={editData.date || ""}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        date: e.target.value,
+                      })
+                    }
+                    type="date"
+                  />
 
-                <input
-                  value={editData.time || ""}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      time: e.target.value,
-                    })
-                  }
-                  placeholder="Time"
-                />
+                  <input
+                    value={editData.time || ""}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        time: e.target.value,
+                      })
+                    }
+                    placeholder="Time"
+                  />
 
-                <input
-                  value={editData.guests || ""}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      guests: e.target.value,
-                    })
-                  }
-                  placeholder="Guests"
-                />
+                  <input
+                    value={editData.guests || ""}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        guests: e.target.value,
+                      })
+                    }
+                    placeholder="Guests"
+                  />
 
-                <button
-                  onClick={() =>
-                    handleUpdate(b.id)
-                  }
-                  style={styles.saveButton}
-                >
-                  Save
-                </button>
+                  <button
+                    onClick={() => handleUpdate(b.id)}
+                    style={styles.saveButton}
+                  >
+                    Save
+                  </button>
 
-                <button
-                  onClick={() => setEditingId(null)}
-                  style={styles.closeButton}
-                >
-                  Close
-                </button>
-              </div>
-            )}
-
-            {/* FOOD ITEMS */}
-            {b.orderItems &&
-              b.orderItems.length > 0 && (
-                <div style={{ marginTop: "15px" }}>
-                  <h4>Food Items:</h4>
-
-                  {b.orderItems.map(
-                    (item, index) => (
-                      <p key={index}>
-                        🍔 {item.name} ×{" "}
-                        {item.qty || 1} - $
-                        {item.price}
-                      </p>
-                    )
-                  )}
+                  <button
+                    onClick={() => setEditingId(null)}
+                    style={styles.closeButton}
+                  >
+                    Close
+                  </button>
                 </div>
               )}
-          </div>
-        ))
+
+              {/* FOOD ITEMS */}
+              {b.orderItems &&
+                b.orderItems.length > 0 && (
+                  <div style={{ marginTop: "15px" }}>
+                    <h4>Food Items:</h4>
+
+                    {b.orderItems.map((item, index) => (
+                      <p key={index}>
+                        🍔 {item.name} ×{" "}
+                        {item.qty || 1} - ${item.price}
+                      </p>
+                    ))}
+                  </div>
+                )}
+            </div>
+          );
+        })
       )}
     </div>
   );
