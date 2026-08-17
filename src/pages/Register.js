@@ -6,77 +6,166 @@ import { useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 
-function Register(){
-
-
+function Register() {
   const navigate = useNavigate();
-// ADD STATES
-const [email, setEmail] = useState("");
-const [password, setPassword] = useState("");
-const [fullName, setFullName] = useState("");
 
-// CREATE FUNCTION
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState("");
 
-const handleRegister = async () => {
-  try {
-    const userCredential =
-      await createUserWithEmailAndPassword(auth, email, password);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-    await setDoc(
-      doc(db, "users", userCredential.user.uid),
-      {
-        uid: userCredential.user.uid,
-        fullName: fullName,
-        email: email,
-        status: "active",
-        role: "user",
-      }
-    );
+  const handleRegister = async (e) => {
+    e.preventDefault();
 
-    alert("User Created Successfully");
-    navigate("/login");
+    setError("");
 
-  } catch (error) {
-    alert(error.message);
-  }
-};
+    if (!fullName.trim()) {
+      setError("Please enter your full name.");
+      return;
+    }
 
+    if (!email.trim()) {
+      setError("Please enter your email address.");
+      return;
+    }
 
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      setError("Password must contain at least one uppercase letter.");
+      return;
+    }
+
+    if (!/[0-9]/.test(password)) {
+      setError("Password must contain at least one number.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const userCredential =
+        await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+      await setDoc(
+        doc(db, "users", userCredential.user.uid),
+        {
+          uid: userCredential.user.uid,
+          fullName: fullName.trim(),
+          email: email.trim(),
+          status: "active",
+          role: "user",
+        }
+      );
+
+      alert("User Created Successfully");
+
+      navigate("/login");
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div style={styles.registerContainer}>
       <div style={styles.overlay}>
         <div style={styles.formBox}>
-          <h2 style={styles.title}>Create Your Account</h2>
+          <h2 style={styles.title}>
+            Create Your Account
+          </h2>
 
-        <input
-  type="text"
-  value={fullName}
-  onChange={(e) => setFullName(e.target.value)}
-  placeholder="Enter Full Name"
-  style={styles.input}
-/>
+          <form onSubmit={handleRegister}>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => {
+                setFullName(e.target.value);
+                setError("");
+              }}
+              placeholder="Enter Full Name"
+              style={styles.input}
+            />
 
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Enter Email"
-        style={styles.input}
-      />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError("");
+              }}
+              placeholder="Enter Email"
+              style={styles.input}
+            />
 
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Enter Password"
-        style={styles.input}
-      />
-          <button onClick={handleRegister} style={styles.btn}>Register</button>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError("");
+              }}
+              placeholder="Password"
+              style={styles.input}
+            />
+
+            <p style={styles.passwordHint}>
+              Password: 8+ characters, 1 uppercase letter,
+              and 1 number.
+            </p>
+
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setError("");
+              }}
+              placeholder="Confirm Password"
+              style={styles.input}
+            />
+
+            {error && (
+              <p style={styles.error}>
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              style={styles.btn}
+              disabled={loading}
+            >
+              {loading
+                ? "Creating Account..."
+                : "Register"}
+            </button>
+          </form>
 
           <p style={styles.text}>
             Already have an account?{" "}
-            <Link to="/login" style={styles.link}>Login Here</Link>
+            <Link
+              to="/login"
+              style={styles.link}
+            >
+              Login Here
+            </Link>
           </p>
         </div>
       </div>
@@ -84,13 +173,11 @@ const handleRegister = async () => {
   );
 }
 
-
-
-
 const styles = {
   registerContainer: {
     height: "100vh",
-    backgroundImage: "url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4')",
+    backgroundImage:
+      "url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4')",
     backgroundSize: "cover",
     backgroundPosition: "center",
   },
@@ -122,10 +209,26 @@ const styles = {
   input: {
     width: "100%",
     padding: "15px",
-    marginBottom: "18px",
+    marginBottom: "12px",
     borderRadius: "5px",
     border: "none",
     fontSize: "16px",
+    boxSizing: "border-box",
+  },
+
+  passwordHint: {
+    color: "#ccc",
+    fontSize: "12px",
+    textAlign: "left",
+    marginBottom: "15px",
+  },
+
+  error: {
+    color: "#ff6b6b",
+    backgroundColor: "rgba(255,0,0,0.1)",
+    padding: "10px",
+    borderRadius: "5px",
+    marginBottom: "15px",
   },
 
   btn: {
