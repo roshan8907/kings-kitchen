@@ -31,3 +31,27 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
           docker push $DOCKERHUB_USERNAME/kings-kitchen:latest
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+
+    steps:
+      - name: Pull latest Docker image
+        run: |
+          docker pull roshan121923/kings-kitchen:latest
+
+      - name: Stop old container
+        run: |
+          docker rm -f kings-kitchen || true
+
+      - name: Run new container
+        run: |
+          docker run -d \
+            --name kings-kitchen \
+            -p 3000:3000 \
+            roshan121923/kings-kitchen:latest
+
+      - name: Check container
+        run: |
+          docker ps
