@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../firebase";
+
 import {
   collection,
   getDocs,
@@ -9,12 +10,9 @@ import {
 
 function AdminUsers() {
   const [users, setUsers] = useState([]);
-
-  // NEW FEATURE: Search and status filter
-  const [searchTerm, setSearchTerm] = useState("");
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // FETCH USERS
   const fetchUsers = async () => {
     try {
       const snap = await getDocs(collection(db, "users"));
@@ -26,8 +24,7 @@ function AdminUsers() {
 
       setUsers(data);
     } catch (error) {
-      console.error("Error fetching users:", error);
-      alert("Unable to load users.");
+      console.error("Error loading users:", error);
     }
   };
 
@@ -35,56 +32,39 @@ function AdminUsers() {
     fetchUsers();
   }, []);
 
-  // BLOCK USER
   const blockUser = async (id) => {
     try {
-      const ref = doc(db, "users", id);
-
-      await updateDoc(ref, {
+      await updateDoc(doc(db, "users", id), {
         status: "blocked",
       });
 
-      fetchUsers();
+      await fetchUsers();
     } catch (error) {
       console.error("Error blocking user:", error);
-      alert("Unable to block user.");
     }
   };
 
-  // UNBLOCK USER
   const unblockUser = async (id) => {
     try {
-      const ref = doc(db, "users", id);
-
-      await updateDoc(ref, {
+      await updateDoc(doc(db, "users", id), {
         status: "active",
       });
 
-      fetchUsers();
+      await fetchUsers();
     } catch (error) {
       console.error("Error unblocking user:", error);
-      alert("Unable to unblock user.");
     }
   };
 
-  // NEW FEATURE: Filter users
   const filteredUsers = users.filter((user) => {
-    const name = (
-      user.fullName ||
-      user.name ||
-      ""
-    ).toLowerCase();
+    const searchValue = search.toLowerCase().trim();
 
-    const email = (
-      user.email ||
-      ""
-    ).toLowerCase();
-
-    const search = searchTerm.toLowerCase().trim();
+    const name = String(user.fullName || user.name || "");
+    const email = String(user.email || "");
 
     const matchesSearch =
-      name.includes(search) ||
-      email.includes(search);
+      name.toLowerCase().includes(searchValue) ||
+      email.toLowerCase().includes(searchValue);
 
     const matchesStatus =
       statusFilter === "all" ||
@@ -95,22 +75,39 @@ function AdminUsers() {
 
   return (
     <div style={styles.page}>
-      <h1 style={styles.title}>👥 Manage Users</h1>
+      <div style={styles.header}>
+        <div>
+          <h1 style={styles.title}>👥 Manage Users</h1>
 
-      {/* NEW FEATURE: SEARCH + STATUS FILTER */}
-      <div style={styles.filterContainer}>
+          <p style={styles.subtitle}>
+            Manage customer accounts and access status.
+          </p>
+        </div>
+
+        <div style={styles.totalBox}>
+          <span style={styles.totalNumber}>
+            {users.length}
+          </span>
+
+          <span style={styles.totalLabel}>
+            Total Users
+          </span>
+        </div>
+      </div>
+
+      <div style={styles.filterBox}>
         <input
           type="text"
           placeholder="Search by name or email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={styles.searchInput}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={styles.search}
         />
 
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          style={styles.statusSelect}
+          style={styles.select}
         >
           <option value="all">All Users</option>
           <option value="active">Active</option>
@@ -119,163 +116,361 @@ function AdminUsers() {
 
         <button
           onClick={() => {
-            setSearchTerm("");
+            setSearch("");
             setStatusFilter("all");
           }}
-          style={styles.clearBtn}
+          style={styles.clearButton}
         >
           Clear
         </button>
       </div>
 
-      <p style={styles.resultText}>
-        Showing {filteredUsers.length} of {users.length} users
-      </p>
+      <div style={styles.resultText}>
+        Showing <strong>{filteredUsers.length}</strong> of{" "}
+        {users.length} users
+      </div>
 
-      <table style={styles.table}>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
+      <div style={styles.tableWrapper}>
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={styles.th}>Name</th>
+              <th style={styles.th}>Email</th>
+              <th style={styles.th}>Role</th>
+              <th style={styles.th}>Status</th>
+              <th
+                style={{
+                  ...styles.th,
+                  textAlign: "center",
+                }}
+              >
+                Action
+              </th>
+            </tr>
+          </thead>
 
-        <tbody>
-          {filteredUsers.length > 0 ? (
-            filteredUsers.map((user) => (
-              <tr key={user.id}>
-                <td>{user.fullName || user.name || "No Name"}</td>
+          <tbody>
+            {filteredUsers.map((user) => {
+              const name =
+                user.fullName ||
+                user.name ||
+                "No Name";
 
-                <td>{user.email || "No Email"}</td>
+              const email = user.email || "No Email";
 
-                <td>
-                  <span
+              const isBlocked =
+                user.status === "blocked";
+
+              const isAdmin =
+                user.role === "admin";
+
+              return (
+                <tr key={user.id}>
+                  <td style={styles.td}>
+                    <div style={styles.nameCell}>
+                      <div style={styles.avatar}>
+                        {name.charAt(0).toUpperCase()}
+                      </div>
+
+                      <span
+                        style={styles.nameText}
+                        title={name}
+                      >
+                        {name}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td style={styles.td}>
+                    <span
+                      style={styles.emailText}
+                      title={email}
+                    >
+                      {email}
+                    </span>
+                  </td>
+
+                  <td style={styles.td}>
+                    <span
+                      style={{
+                        ...styles.roleBadge,
+                        background: isAdmin
+                          ? "#D4AF37"
+                          : "#333",
+                        color: isAdmin
+                          ? "#111"
+                          : "#ddd",
+                      }}
+                    >
+                      {isAdmin ? "Admin" : "User"}
+                    </span>
+                  </td>
+
+                  <td style={styles.td}>
+                    <span
+                      style={{
+                        ...styles.statusBadge,
+                        background: isBlocked
+                          ? "rgba(220,53,69,0.15)"
+                          : "rgba(25,135,84,0.15)",
+                        color: isBlocked
+                          ? "#ff5c6c"
+                          : "#4ade80",
+                      }}
+                    >
+                      {isBlocked ? "Blocked" : "Active"}
+                    </span>
+                  </td>
+
+                  <td
                     style={{
-                      color:
-                        user.status === "blocked"
-                          ? "red"
-                          : "lightgreen",
-                      fontWeight: "bold",
+                      ...styles.td,
+                      textAlign: "center",
                     }}
                   >
-                    {user.status || "active"}
-                  </span>
-                </td>
+                    {isAdmin ? (
+                      <span style={styles.adminText}>
+                        Admin Account
+                      </span>
+                    ) : isBlocked ? (
+                      <button
+                        onClick={() => unblockUser(user.id)}
+                        style={styles.unblockButton}
+                      >
+                        Unblock
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => blockUser(user.id)}
+                        style={styles.blockButton}
+                      >
+                        Block
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
 
-                <td>
-                  {user.status === "blocked" ? (
-                    <button
-                      onClick={() => unblockUser(user.id)}
-                      style={styles.unblockBtn}
-                    >
-                      Unblock
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => blockUser(user.id)}
-                      style={styles.blockBtn}
-                    >
-                      Block
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="4" style={styles.noResults}>
-                No users found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+        {filteredUsers.length === 0 && (
+          <div style={styles.emptyState}>
+            No users found.
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 const styles = {
   page: {
-    padding: "30px",
-    background: "#111",
-    minHeight: "100vh",
+    minHeight: "calc(100vh - 80px)",
+    background: "#0f0f0f",
     color: "white",
+    padding: "35px",
+    boxSizing: "border-box",
+  },
+
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "20px",
+    marginBottom: "30px",
   },
 
   title: {
+    margin: 0,
     color: "#D4AF37",
-    marginBottom: "20px",
+    fontSize: "32px",
   },
 
-  filterContainer: {
+  subtitle: {
+    marginTop: "7px",
+    color: "#888",
+    fontSize: "14px",
+  },
+
+  totalBox: {
+    background: "#1b1b1b",
+    border: "1px solid #2d2d2d",
+    borderRadius: "12px",
+    padding: "15px 22px",
     display: "flex",
-    gap: "10px",
-    marginBottom: "15px",
+    flexDirection: "column",
+    alignItems: "center",
+    minWidth: "110px",
+  },
+
+  totalNumber: {
+    color: "#D4AF37",
+    fontWeight: "700",
+    fontSize: "26px",
+  },
+
+  totalLabel: {
+    color: "#999",
+    fontSize: "12px",
+    marginTop: "3px",
+  },
+
+  filterBox: {
+    display: "flex",
+    gap: "12px",
     flexWrap: "wrap",
+    background: "#181818",
+    padding: "16px",
+    borderRadius: "12px",
+    border: "1px solid #292929",
   },
 
-  searchInput: {
+  search: {
     flex: 1,
-    minWidth: "250px",
-    padding: "10px",
+    minWidth: "280px",
+    padding: "12px 15px",
     background: "#222",
+    border: "1px solid #3a3a3a",
     color: "white",
-    border: "1px solid #444",
-    borderRadius: "5px",
+    borderRadius: "7px",
+    outline: "none",
+    boxSizing: "border-box",
   },
 
-  statusSelect: {
-    padding: "10px",
+  select: {
+    padding: "12px 15px",
     background: "#222",
+    border: "1px solid #3a3a3a",
     color: "white",
-    border: "1px solid #444",
-    borderRadius: "5px",
+    borderRadius: "7px",
   },
 
-  clearBtn: {
-    padding: "10px 15px",
-    background: "#555",
+  clearButton: {
+    padding: "12px 18px",
+    background: "#444",
     color: "white",
     border: "none",
-    borderRadius: "5px",
+    borderRadius: "7px",
     cursor: "pointer",
   },
 
   resultText: {
-    color: "#aaa",
-    marginBottom: "15px",
+    margin: "18px 0 12px",
+    color: "#888",
+    fontSize: "14px",
+  },
+
+  tableWrapper: {
+    background: "#181818",
+    borderRadius: "12px",
+    overflow: "hidden",
+    border: "1px solid #292929",
   },
 
   table: {
     width: "100%",
     borderCollapse: "collapse",
+    tableLayout: "fixed",
+  },
+
+  th: {
+    padding: "16px",
+    textAlign: "left",
     background: "#222",
+    color: "#D4AF37",
+    fontSize: "13px",
+    borderBottom: "1px solid #333",
   },
 
-  blockBtn: {
-    background: "red",
+  td: {
+    padding: "14px 16px",
+    borderBottom: "1px solid #262626",
+    verticalAlign: "middle",
+    maxWidth: "0",
+    overflow: "hidden",
+  },
+
+  nameCell: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    minWidth: 0,
+  },
+
+  avatar: {
+    width: "34px",
+    height: "34px",
+    borderRadius: "50%",
+    background: "#8B0000",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: "bold",
+    flexShrink: 0,
+  },
+
+  nameText: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    display: "block",
+  },
+
+  emailText: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    display: "block",
+    color: "#bbb",
+  },
+
+  roleBadge: {
+    display: "inline-block",
+    padding: "5px 9px",
+    borderRadius: "6px",
+    fontSize: "11px",
+    fontWeight: "700",
+  },
+
+  statusBadge: {
+    display: "inline-block",
+    padding: "5px 10px",
+    borderRadius: "20px",
+    fontSize: "11px",
+    fontWeight: "700",
+  },
+
+  blockButton: {
+    background: "#dc3545",
     color: "white",
     border: "none",
-    padding: "8px 12px",
+    borderRadius: "6px",
+    padding: "8px 14px",
     cursor: "pointer",
-    borderRadius: "5px",
+    fontWeight: "600",
   },
 
-  unblockBtn: {
-    background: "green",
+  unblockButton: {
+    background: "#198754",
     color: "white",
     border: "none",
-    padding: "8px 12px",
+    borderRadius: "6px",
+    padding: "8px 14px",
     cursor: "pointer",
-    borderRadius: "5px",
+    fontWeight: "600",
   },
 
-  noResults: {
+  adminText: {
+    color: "#D4AF37",
+    fontSize: "12px",
+    fontWeight: "700",
+  },
+
+  emptyState: {
     textAlign: "center",
-    padding: "30px",
-    color: "#aaa",
+    padding: "40px",
+    color: "#777",
   },
 };
 
