@@ -75,7 +75,6 @@ function AdminUsers() {
 
   return (
     <div style={styles.page}>
-      {/* HEADER */}
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>👥 Manage Users</h1>
@@ -96,7 +95,6 @@ function AdminUsers() {
         </div>
       </div>
 
-      {/* SEARCH + FILTER */}
       <div style={styles.filterBox}>
         <input
           type="text"
@@ -127,13 +125,11 @@ function AdminUsers() {
         </button>
       </div>
 
-      {/* RESULT COUNT */}
       <div style={styles.resultText}>
         Showing <strong>{filteredUsers.length}</strong> of{" "}
         {users.length} users
       </div>
 
-      {/* TABLE */}
       <div style={styles.tableWrapper}>
         <table style={styles.table}>
           <thead>
@@ -162,12 +158,14 @@ function AdminUsers() {
 
               const email = user.email || "No Email";
 
-              const isBlocked = user.status === "blocked";
-              const isAdmin = user.role === "admin";
+              const isBlocked =
+                user.status === "blocked";
+
+              const isAdmin =
+                user.role === "admin";
 
               return (
                 <tr key={user.id}>
-                  {/* NAME */}
                   <td style={styles.td}>
                     <div style={styles.nameCell}>
                       <div style={styles.avatar}>
@@ -183,7 +181,6 @@ function AdminUsers() {
                     </div>
                   </td>
 
-                  {/* EMAIL */}
                   <td style={styles.td}>
                     <span
                       style={styles.emailText}
@@ -193,7 +190,6 @@ function AdminUsers() {
                     </span>
                   </td>
 
-                  {/* ROLE */}
                   <td style={styles.td}>
                     <span
                       style={{
@@ -210,7 +206,6 @@ function AdminUsers() {
                     </span>
                   </td>
 
-                  {/* STATUS */}
                   <td style={styles.td}>
                     <span
                       style={{
@@ -227,7 +222,6 @@ function AdminUsers() {
                     </span>
                   </td>
 
-                  {/* ACTION */}
                   <td
                     style={{
                       ...styles.td,

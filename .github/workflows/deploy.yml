@@ -1,4 +1,4 @@
-name: Deploy Web App to Server
+name: CI/CD Pipeline
 
 on:
   push:
@@ -6,37 +6,52 @@ on:
       - main
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
       - name: Build Docker Image
-        run: |
-          docker build -t my-web-app .
-
-      - name: Save Docker Image
-        run: |
-          docker save my-web-app -o my-web-app.tar
-
-      - name: Transfer Docker Image to Server
         env:
-          SERVER_IP: ${{ secrets.SERVER_IP }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
-          sshpass -p "${{ secrets.SERVER_PASSWORD }}" scp -o StrictHostKeyChecking=no my-web-app.tar $SERVER_USER@$SERVER_IP:/root/
+          docker build -t $DOCKERHUB_USERNAME/kings-kitchen:latest .
 
-      - name: Deploy Application on Server
+      - name: Push Image to Docker Hub
         env:
-          SERVER_IP: ${{ secrets.SERVER_IP }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
-          sshpass -p "${{ secrets.SERVER_PASSWORD }}" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
-            docker stop my-web-app || true
-            docker rm my-web-app || true
-            docker load -i /root/my-web-app.tar
-            docker run -d --name my-web-app -p 80:80 my-web-app
-            docker system prune -f
-          EOF
+          docker push $DOCKERHUB_USERNAME/kings-kitchen:latest
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+
+    steps:
+      - name: Pull latest Docker image
+        run: |
+          docker pull roshan121923/kings-kitchen:latest
+
+      - name: Stop old container
+        run: |
+          docker rm -f kings-kitchen || true
+
+      - name: Run new container
+        run: |
+          docker run -d \
+            --name kings-kitchen \
+            -p 3000:3000 \
+            roshan121923/kings-kitchen:latest
+
+      - name: Check container
+        run: |
+          docker ps

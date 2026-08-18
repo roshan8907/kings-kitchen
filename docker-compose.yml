@@ -1,0 +1,9 @@
+services:
+  kings-kitchen:
+    build: .
+    container_name: kings-kitchen
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+
