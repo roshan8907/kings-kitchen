@@ -18,6 +18,7 @@ function Login() {
 
   const navigate = useNavigate();
 
+  // EMAIL LOGIN
   const handleLogin = async () => {
     if (!email.trim() || !password) {
       alert("Please enter your email and password.");
@@ -36,6 +37,7 @@ function Login() {
 
       const user = userCredential.user;
 
+      // Get user record from Firestore
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 
@@ -47,18 +49,21 @@ function Login() {
 
       const userData = userSnap.data();
 
+      // BLOCKED ACCOUNT CHECK
       if (userData.status === "blocked") {
         alert("🚫 Your account is blocked by admin.");
         await signOut(auth);
         return;
       }
 
+      // ADMIN CHECK
       if (userData.role === "admin") {
         alert("Admin login successful.");
         navigate("/dashboard");
         return;
       }
 
+      // NORMAL USER
       navigate("/");
     } catch (error) {
       console.error("Login error:", error);
@@ -75,21 +80,28 @@ function Login() {
           break;
 
         case "auth/too-many-requests":
-          alert("Too many login attempts. Please try again later.");
+          alert(
+            "Too many login attempts. Please try again later."
+          );
           break;
 
         case "auth/network-request-failed":
-          alert("Network error. Please check your internet connection.");
+          alert(
+            "Network error. Please check your internet connection."
+          );
           break;
 
         default:
-          alert("Unable to complete login. Please try again.");
+          alert(
+            "Unable to complete login. Please try again."
+          );
       }
     } finally {
       setLoading(false);
     }
   };
 
+  // GOOGLE LOGIN
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
@@ -104,6 +116,7 @@ function Login() {
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 
+      // CREATE NEW GOOGLE USER
       if (!userSnap.exists()) {
         await setDoc(userRef, {
           uid: user.uid,
@@ -120,18 +133,21 @@ function Login() {
 
       const userData = userSnap.data();
 
+      // BLOCKED GOOGLE ACCOUNT
       if (userData.status === "blocked") {
         alert("🚫 Your account is blocked by admin.");
         await signOut(auth);
         return;
       }
 
+      // ADMIN GOOGLE ACCOUNT
       if (userData.role === "admin") {
         alert("Admin login successful.");
         navigate("/dashboard");
         return;
       }
 
+      // NORMAL GOOGLE USER
       alert("Google Login Successful");
       navigate("/");
     } catch (error) {
@@ -142,16 +158,21 @@ function Login() {
       }
 
       if (error.code === "auth/popup-blocked") {
-        alert("The Google login popup was blocked by the browser.");
+        alert(
+          "The Google login popup was blocked by the browser."
+        );
         return;
       }
 
-      alert("Unable to complete Google login. Please try again.");
+      alert(
+        "Unable to complete Google login. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // RESET PASSWORD
   const handleResetPassword = async () => {
     if (!email.trim()) {
       alert("Please enter your email address first.");
@@ -168,7 +189,10 @@ function Login() {
         "Password reset email sent. Please check your inbox and spam folder."
       );
     } catch (error) {
-      console.error("Password reset error:", error);
+      console.error(
+        "Password reset error:",
+        error
+      );
 
       if (error.code === "auth/invalid-email") {
         alert("Please enter a valid email address.");
@@ -184,10 +208,12 @@ function Login() {
     <div style={styles.loginContainer}>
       <div style={styles.overlay}>
         <div style={styles.loginBox}>
+
           <h2 style={styles.title}>
             Login Your Account
           </h2>
 
+          {/* EMAIL */}
           <input
             type="email"
             value={email}
@@ -199,6 +225,7 @@ function Login() {
             disabled={loading}
           />
 
+          {/* PASSWORD */}
           <input
             type="password"
             value={password}
@@ -210,6 +237,7 @@ function Login() {
             disabled={loading}
           />
 
+          {/* LOGIN */}
           <button
             onClick={handleLogin}
             style={styles.btn}
@@ -218,6 +246,7 @@ function Login() {
             {loading ? "Please wait..." : "Login"}
           </button>
 
+          {/* GOOGLE LOGIN */}
           <button
             onClick={handleGoogleLogin}
             style={styles.googleBtn}
@@ -226,6 +255,7 @@ function Login() {
             Continue with Google
           </button>
 
+          {/* FORGOT PASSWORD */}
           <button
             onClick={handleResetPassword}
             style={styles.forgotLink}
@@ -234,6 +264,7 @@ function Login() {
             Forgot Password?
           </button>
 
+          {/* REGISTER */}
           <p style={styles.text}>
             Don't have an account?{" "}
             <Link
@@ -243,6 +274,7 @@ function Login() {
               Register Here
             </Link>
           </p>
+
         </div>
       </div>
     </div>

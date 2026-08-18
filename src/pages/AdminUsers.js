@@ -11,15 +11,11 @@ import {
 function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] =
-    useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  // FETCH USERS
   const fetchUsers = async () => {
     try {
-      const snap = await getDocs(
-        collection(db, "users")
-      );
+      const snap = await getDocs(collection(db, "users"));
 
       const data = snap.docs.map((userDoc) => ({
         id: userDoc.id,
@@ -28,10 +24,7 @@ function AdminUsers() {
 
       setUsers(data);
     } catch (error) {
-      console.error(
-        "Error loading users:",
-        error
-      );
+      console.error("Error loading users:", error);
     }
   };
 
@@ -39,88 +32,56 @@ function AdminUsers() {
     fetchUsers();
   }, []);
 
-  // BLOCK USER
   const blockUser = async (id) => {
     try {
-      await updateDoc(
-        doc(db, "users", id),
-        {
-          status: "blocked",
-        }
-      );
+      await updateDoc(doc(db, "users", id), {
+        status: "blocked",
+      });
 
-      fetchUsers();
+      await fetchUsers();
     } catch (error) {
-      console.error(
-        "Error blocking user:",
-        error
-      );
+      console.error("Error blocking user:", error);
     }
   };
 
-  // UNBLOCK USER
   const unblockUser = async (id) => {
     try {
-      await updateDoc(
-        doc(db, "users", id),
-        {
-          status: "active",
-        }
-      );
+      await updateDoc(doc(db, "users", id), {
+        status: "active",
+      });
 
-      fetchUsers();
+      await fetchUsers();
     } catch (error) {
-      console.error(
-        "Error unblocking user:",
-        error
-      );
+      console.error("Error unblocking user:", error);
     }
   };
 
-  // SEARCH + STATUS FILTER
   const filteredUsers = users.filter((user) => {
-    const searchValue =
-      search.toLowerCase().trim();
+    const searchValue = search.toLowerCase().trim();
 
-    const name =
-      user.fullName ||
-      user.name ||
-      "";
-
-    const email =
-      user.email || "";
+    const name = String(user.fullName || user.name || "");
+    const email = String(user.email || "");
 
     const matchesSearch =
-      name
-        .toLowerCase()
-        .includes(searchValue) ||
-      email
-        .toLowerCase()
-        .includes(searchValue);
+      name.toLowerCase().includes(searchValue) ||
+      email.toLowerCase().includes(searchValue);
 
     const matchesStatus =
       statusFilter === "all" ||
       user.status === statusFilter;
 
-    return (
-      matchesSearch &&
-      matchesStatus
-    );
+    return matchesSearch && matchesStatus;
   });
 
   return (
     <div style={styles.page}>
-
       {/* HEADER */}
       <div style={styles.header}>
         <div>
-          <h1 style={styles.title}>
-            👥 Manage Users
-          </h1>
+          <h1 style={styles.title}>👥 Manage Users</h1>
 
           <p style={styles.subtitle}>
-            Manage customer accounts and
-            access status.
+            Manage customer accounts and access status.
           </p>
         </div>
 
@@ -137,37 +98,22 @@ function AdminUsers() {
 
       {/* SEARCH + FILTER */}
       <div style={styles.filterBox}>
-
         <input
           type="text"
           placeholder="Search by name or email..."
           value={search}
-          onChange={(e) =>
-            setSearch(e.target.value)
-          }
+          onChange={(e) => setSearch(e.target.value)}
           style={styles.search}
         />
 
         <select
           value={statusFilter}
-          onChange={(e) =>
-            setStatusFilter(
-              e.target.value
-            )
-          }
+          onChange={(e) => setStatusFilter(e.target.value)}
           style={styles.select}
         >
-          <option value="all">
-            All Users
-          </option>
-
-          <option value="active">
-            Active
-          </option>
-
-          <option value="blocked">
-            Blocked
-          </option>
+          <option value="all">All Users</option>
+          <option value="active">Active</option>
+          <option value="blocked">Blocked</option>
         </select>
 
         <button
@@ -183,35 +129,19 @@ function AdminUsers() {
 
       {/* RESULT COUNT */}
       <div style={styles.resultText}>
-        Showing{" "}
-        <strong>
-          {filteredUsers.length}
-        </strong>{" "}
-        of {users.length} users
+        Showing <strong>{filteredUsers.length}</strong> of{" "}
+        {users.length} users
       </div>
 
-      {/* USER TABLE */}
+      {/* TABLE */}
       <div style={styles.tableWrapper}>
         <table style={styles.table}>
-
           <thead>
             <tr>
-              <th style={styles.th}>
-                Name
-              </th>
-
-              <th style={styles.th}>
-                Email
-              </th>
-
-              <th style={styles.th}>
-                Role
-              </th>
-
-              <th style={styles.th}>
-                Status
-              </th>
-
+              <th style={styles.th}>Name</th>
+              <th style={styles.th}>Email</th>
+              <th style={styles.th}>Role</th>
+              <th style={styles.th}>Status</th>
               <th
                 style={{
                   ...styles.th,
@@ -230,25 +160,18 @@ function AdminUsers() {
                 user.name ||
                 "No Name";
 
-              const isBlocked =
-                user.status === "blocked";
+              const email = user.email || "No Email";
 
-              const isAdmin =
-                user.role === "admin";
+              const isBlocked = user.status === "blocked";
+              const isAdmin = user.role === "admin";
 
               return (
                 <tr key={user.id}>
-
                   {/* NAME */}
                   <td style={styles.td}>
                     <div style={styles.nameCell}>
-
-                      <div
-                        style={styles.avatar}
-                      >
-                        {name
-                          .charAt(0)
-                          .toUpperCase()}
+                      <div style={styles.avatar}>
+                        {name.charAt(0).toUpperCase()}
                       </div>
 
                       <span
@@ -264,10 +187,9 @@ function AdminUsers() {
                   <td style={styles.td}>
                     <span
                       style={styles.emailText}
-                      title={user.email || ""}
+                      title={email}
                     >
-                      {user.email ||
-                        "No Email"}
+                      {email}
                     </span>
                   </td>
 
@@ -284,9 +206,7 @@ function AdminUsers() {
                           : "#ddd",
                       }}
                     >
-                      {isAdmin
-                        ? "Admin"
-                        : "User"}
+                      {isAdmin ? "Admin" : "User"}
                     </span>
                   </td>
 
@@ -303,9 +223,7 @@ function AdminUsers() {
                           : "#4ade80",
                       }}
                     >
-                      {isBlocked
-                        ? "Blocked"
-                        : "Active"}
+                      {isBlocked ? "Blocked" : "Active"}
                     </span>
                   </td>
 
@@ -317,45 +235,29 @@ function AdminUsers() {
                     }}
                   >
                     {isAdmin ? (
-                      <span
-                        style={styles.adminText}
-                      >
+                      <span style={styles.adminText}>
                         Admin Account
                       </span>
                     ) : isBlocked ? (
                       <button
-                        onClick={() =>
-                          unblockUser(
-                            user.id
-                          )
-                        }
-                        style={
-                          styles.unblockButton
-                        }
+                        onClick={() => unblockUser(user.id)}
+                        style={styles.unblockButton}
                       >
                         Unblock
                       </button>
                     ) : (
                       <button
-                        onClick={() =>
-                          blockUser(
-                            user.id
-                          )
-                        }
-                        style={
-                          styles.blockButton
-                        }
+                        onClick={() => blockUser(user.id)}
+                        style={styles.blockButton}
                       >
                         Block
                       </button>
                     )}
                   </td>
-
                 </tr>
               );
             })}
           </tbody>
-
         </table>
 
         {filteredUsers.length === 0 && (

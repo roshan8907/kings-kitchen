@@ -25,29 +25,19 @@ function App() {
       <Routes>
         {/* PUBLIC PAGES */}
         <Route path="/" element={<Home />} />
-
         <Route path="/about" element={<About />} />
-
         <Route path="/menu" element={<UserMenu />} />
-
         <Route path="/reservation" element={<Reservation />} />
-
         <Route path="/login" element={<Login />} />
-
         <Route path="/register" element={<Register />} />
 
         {/* ADMIN ENTRY */}
         <Route
           path="/admin"
-          element={
-            <Navigate
-              to="/dashboard"
-              replace
-            />
-          }
+          element={<Navigate to="/dashboard" replace />}
         />
 
-        {/* RESERVATION MENU - LOGGED-IN USERS */}
+        {/* LOGGED-IN USER ROUTES */}
         <Route
           path="/reservation-menu"
           element={
@@ -57,7 +47,6 @@ function App() {
           }
         />
 
-        {/* MY RESERVATIONS - LOGGED-IN USERS */}
         <Route
           path="/my-reservations"
           element={
