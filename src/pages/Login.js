@@ -18,7 +18,6 @@ function Login() {
 
   const navigate = useNavigate();
 
-  // EMAIL LOGIN
   const handleLogin = async () => {
     if (!email.trim() || !password) {
       alert("Please enter your email and password.");
@@ -28,15 +27,15 @@ function Login() {
     try {
       setLoading(true);
 
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password
-      );
+      const userCredential =
+        await signInWithEmailAndPassword(
+          auth,
+          email.trim(),
+          password
+        );
 
       const user = userCredential.user;
 
-      // Get Firestore user record
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 
@@ -48,21 +47,18 @@ function Login() {
 
       const userData = userSnap.data();
 
-      // BLOCKED USER CHECK
       if (userData.status === "blocked") {
         alert("🚫 Your account is blocked by admin.");
         await signOut(auth);
         return;
       }
 
-      // ADMIN CHECK USING FIRESTORE ROLE
       if (userData.role === "admin") {
         alert("Admin login successful.");
         navigate("/dashboard");
         return;
       }
 
-      // NORMAL USER
       navigate("/");
     } catch (error) {
       console.error("Login error:", error);
@@ -94,7 +90,6 @@ function Login() {
     }
   };
 
-  // GOOGLE LOGIN
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
@@ -109,7 +104,6 @@ function Login() {
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 
-      // CREATE NEW GOOGLE USER
       if (!userSnap.exists()) {
         await setDoc(userRef, {
           uid: user.uid,
@@ -126,21 +120,18 @@ function Login() {
 
       const userData = userSnap.data();
 
-      // BLOCKED GOOGLE USER CHECK
       if (userData.status === "blocked") {
         alert("🚫 Your account is blocked by admin.");
         await signOut(auth);
         return;
       }
 
-      // ADMIN GOOGLE LOGIN
       if (userData.role === "admin") {
         alert("Admin login successful.");
         navigate("/dashboard");
         return;
       }
 
-      // NORMAL GOOGLE USER
       alert("Google Login Successful");
       navigate("/");
     } catch (error) {
@@ -161,7 +152,6 @@ function Login() {
     }
   };
 
-  // RESET PASSWORD
   const handleResetPassword = async () => {
     if (!email.trim()) {
       alert("Please enter your email address first.");
@@ -198,7 +188,6 @@ function Login() {
             Login Your Account
           </h2>
 
-          {/* EMAIL */}
           <input
             type="email"
             value={email}
@@ -210,7 +199,6 @@ function Login() {
             disabled={loading}
           />
 
-          {/* PASSWORD */}
           <input
             type="password"
             value={password}
@@ -222,7 +210,6 @@ function Login() {
             disabled={loading}
           />
 
-          {/* LOGIN */}
           <button
             onClick={handleLogin}
             style={styles.btn}
@@ -231,7 +218,6 @@ function Login() {
             {loading ? "Please wait..." : "Login"}
           </button>
 
-          {/* GOOGLE LOGIN */}
           <button
             onClick={handleGoogleLogin}
             style={styles.googleBtn}
@@ -240,7 +226,6 @@ function Login() {
             Continue with Google
           </button>
 
-          {/* RESET PASSWORD */}
           <button
             onClick={handleResetPassword}
             style={styles.forgotLink}
@@ -249,7 +234,6 @@ function Login() {
             Forgot Password?
           </button>
 
-          {/* REGISTER */}
           <p style={styles.text}>
             Don't have an account?{" "}
             <Link
@@ -285,7 +269,8 @@ const styles = {
 
   loginBox: {
     width: "400px",
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor:
+      "rgba(255,255,255,0.08)",
     padding: "40px",
     borderRadius: "10px",
     textAlign: "center",

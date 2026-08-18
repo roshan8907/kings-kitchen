@@ -14,6 +14,7 @@ function AdminUsers() {
   const [statusFilter, setStatusFilter] =
     useState("all");
 
+  // FETCH USERS
   const fetchUsers = async () => {
     try {
       const snap = await getDocs(
@@ -38,6 +39,7 @@ function AdminUsers() {
     fetchUsers();
   }, []);
 
+  // BLOCK USER
   const blockUser = async (id) => {
     try {
       await updateDoc(
@@ -56,6 +58,7 @@ function AdminUsers() {
     }
   };
 
+  // UNBLOCK USER
   const unblockUser = async (id) => {
     try {
       await updateDoc(
@@ -74,6 +77,7 @@ function AdminUsers() {
     }
   };
 
+  // SEARCH + STATUS FILTER
   const filteredUsers = users.filter((user) => {
     const searchValue =
       search.toLowerCase().trim();
@@ -131,7 +135,7 @@ function AdminUsers() {
         </div>
       </div>
 
-      {/* FILTER BAR */}
+      {/* SEARCH + FILTER */}
       <div style={styles.filterBox}>
 
         <input
@@ -186,7 +190,7 @@ function AdminUsers() {
         of {users.length} users
       </div>
 
-      {/* TABLE */}
+      {/* USER TABLE */}
       <div style={styles.tableWrapper}>
         <table style={styles.table}>
 
@@ -220,35 +224,27 @@ function AdminUsers() {
           </thead>
 
           <tbody>
-
             {filteredUsers.map((user) => {
-
               const name =
                 user.fullName ||
                 user.name ||
                 "No Name";
 
               const isBlocked =
-                user.status ===
-                "blocked";
+                user.status === "blocked";
 
               const isAdmin =
-                user.role ===
-                "admin";
+                user.role === "admin";
 
               return (
                 <tr key={user.id}>
 
+                  {/* NAME */}
                   <td style={styles.td}>
-                    <div
-                      style={
-                        styles.nameCell
-                      }
-                    >
+                    <div style={styles.nameCell}>
+
                       <div
-                        style={
-                          styles.avatar
-                        }
+                        style={styles.avatar}
                       >
                         {name
                           .charAt(0)
@@ -256,9 +252,7 @@ function AdminUsers() {
                       </div>
 
                       <span
-                        style={
-                          styles.nameText
-                        }
+                        style={styles.nameText}
                         title={name}
                       >
                         {name}
@@ -266,32 +260,28 @@ function AdminUsers() {
                     </div>
                   </td>
 
+                  {/* EMAIL */}
                   <td style={styles.td}>
                     <span
-                      title={
-                        user.email || ""
-                      }
-                      style={
-                        styles.emailText
-                      }
+                      style={styles.emailText}
+                      title={user.email || ""}
                     >
                       {user.email ||
                         "No Email"}
                     </span>
                   </td>
 
+                  {/* ROLE */}
                   <td style={styles.td}>
                     <span
                       style={{
                         ...styles.roleBadge,
-                        background:
-                          isAdmin
-                            ? "#D4AF37"
-                            : "#333",
-                        color:
-                          isAdmin
-                            ? "#111"
-                            : "#ddd",
+                        background: isAdmin
+                          ? "#D4AF37"
+                          : "#333",
+                        color: isAdmin
+                          ? "#111"
+                          : "#ddd",
                       }}
                     >
                       {isAdmin
@@ -300,18 +290,17 @@ function AdminUsers() {
                     </span>
                   </td>
 
+                  {/* STATUS */}
                   <td style={styles.td}>
                     <span
                       style={{
                         ...styles.statusBadge,
-                        background:
-                          isBlocked
-                            ? "rgba(220,53,69,0.15)"
-                            : "rgba(25,135,84,0.15)",
-                        color:
-                          isBlocked
-                            ? "#ff5c6c"
-                            : "#4ade80",
+                        background: isBlocked
+                          ? "rgba(220,53,69,0.15)"
+                          : "rgba(25,135,84,0.15)",
+                        color: isBlocked
+                          ? "#ff5c6c"
+                          : "#4ade80",
                       }}
                     >
                       {isBlocked
@@ -320,6 +309,7 @@ function AdminUsers() {
                     </span>
                   </td>
 
+                  {/* ACTION */}
                   <td
                     style={{
                       ...styles.td,
@@ -328,9 +318,7 @@ function AdminUsers() {
                   >
                     {isAdmin ? (
                       <span
-                        style={
-                          styles.adminText
-                        }
+                        style={styles.adminText}
                       >
                         Admin Account
                       </span>
@@ -366,17 +354,12 @@ function AdminUsers() {
                 </tr>
               );
             })}
-
           </tbody>
 
         </table>
 
         {filteredUsers.length === 0 && (
-          <div
-            style={
-              styles.emptyState
-            }
-          >
+          <div style={styles.emptyState}>
             No users found.
           </div>
         )}

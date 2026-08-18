@@ -23,13 +23,29 @@ function App() {
       <Navbar />
 
       <Routes>
-        {/* PUBLIC ROUTES */}
+        {/* PUBLIC PAGES */}
         <Route path="/" element={<Home />} />
+
         <Route path="/about" element={<About />} />
+
         <Route path="/menu" element={<UserMenu />} />
+
         <Route path="/reservation" element={<Reservation />} />
+
         <Route path="/login" element={<Login />} />
+
         <Route path="/register" element={<Register />} />
+
+        {/* ADMIN ENTRY */}
+        <Route
+          path="/admin"
+          element={
+            <Navigate
+              to="/dashboard"
+              replace
+            />
+          }
+        />
 
         {/* RESERVATION MENU - LOGGED-IN USERS */}
         <Route
@@ -48,17 +64,6 @@ function App() {
             <ProtectedRoute>
               <MyReservationStatus />
             </ProtectedRoute>
-          }
-        />
-
-        {/* ADMIN ENTRY */}
-        <Route
-          path="/admin"
-          element={
-            <Navigate
-              to="/dashboard"
-              replace
-            />
           }
         />
 
