@@ -5,7 +5,7 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
   signInWithPopup,
-  signOut
+  signOut,
 } from "firebase/auth";
 
 import { setDoc, doc, getDoc } from "firebase/firestore";
@@ -14,144 +14,251 @@ import { auth, db, googleProvider } from "../firebase";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
   // EMAIL LOGIN
-const handleLogin = async () => {
-  try {
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-
-    const user = userCredential.user;
-
-    // 🔥 1. ADMIN CHECK FIRST (IMPORTANT FIX)
-    if (user.email === "admin@gmail.com") {
-      navigate("/dashboard");
+  const handleLogin = async () => {
+    if (!email.trim() || !password) {
+      alert("Please enter your email and password.");
       return;
     }
 
-    // 🔍 2. NORMAL USER → CHECK FIRESTORE
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-      alert("User not found in database");
-      await signOut(auth);
-      return;
-    }
-
-    const userData = userSnap.data();
-
-    // 🚫 BLOCK CHECK
-    if (userData.status === "blocked") {
-      alert("🚫 Your account is blocked by admin");
-      await signOut(auth);
-      return;
-    }
-
-    // ✅ NORMAL USER
-    navigate("/");
-
-  } catch (error) {
-    alert(error.message);
-  }
-};
-
-// GOOGLE LOGIN
- const handleGoogleLogin = async () => {
-  try {
-    const result = await signInWithPopup(auth, googleProvider);
-
-    const user = result.user;
-
-    // 🔍 CHECK IF USER EXISTS IN FIRESTORE
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-      // 🆕 CREATE USER IN FIRESTORE
-      await setDoc(userRef, {
-        uid: user.uid,
-        fullName: user.displayName,
-        email: user.email,
-        status: "active",
-        role: "user",
-      });
-    }
-
-    alert("Google Login Successful");
-    navigate("/");
-
-  } catch (error) {
-    alert(error.message);
-  }
-};
-
-
-  // RESET PASSWORD
-  const handleResetPassword = async () => {
     try {
-      await sendPasswordResetEmail(auth, email);
-      alert("Password reset email sent!");
+      setLoading(true);
+
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password
+      );
+
+      const user = userCredential.user;
+
+      // Get Firestore user record
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        alert("Unable to verify your account.");
+        await signOut(auth);
+        return;
+      }
+
+      const userData = userSnap.data();
+
+      // BLOCKED USER CHECK
+      if (userData.status === "blocked") {
+        alert("🚫 Your account is blocked by admin.");
+        await signOut(auth);
+        return;
+      }
+
+      // ADMIN CHECK USING FIRESTORE ROLE
+      if (userData.role === "admin") {
+        alert("Admin login successful.");
+        navigate("/dashboard");
+        return;
+      }
+
+      // NORMAL USER
+      navigate("/");
     } catch (error) {
-      alert(error.message);
+      console.error("Login error:", error);
+
+      switch (error.code) {
+        case "auth/invalid-credential":
+        case "auth/wrong-password":
+        case "auth/user-not-found":
+          alert("Invalid email or password.");
+          break;
+
+        case "auth/invalid-email":
+          alert("Please enter a valid email address.");
+          break;
+
+        case "auth/too-many-requests":
+          alert("Too many login attempts. Please try again later.");
+          break;
+
+        case "auth/network-request-failed":
+          alert("Network error. Please check your internet connection.");
+          break;
+
+        default:
+          alert("Unable to complete login. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  
-  
+  // GOOGLE LOGIN
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+
+      const result = await signInWithPopup(
+        auth,
+        googleProvider
+      );
+
+      const user = result.user;
+
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      // CREATE NEW GOOGLE USER
+      if (!userSnap.exists()) {
+        await setDoc(userRef, {
+          uid: user.uid,
+          fullName: user.displayName || "",
+          email: user.email || "",
+          status: "active",
+          role: "user",
+        });
+
+        alert("Google Login Successful");
+        navigate("/");
+        return;
+      }
+
+      const userData = userSnap.data();
+
+      // BLOCKED GOOGLE USER CHECK
+      if (userData.status === "blocked") {
+        alert("🚫 Your account is blocked by admin.");
+        await signOut(auth);
+        return;
+      }
+
+      // ADMIN GOOGLE LOGIN
+      if (userData.role === "admin") {
+        alert("Admin login successful.");
+        navigate("/dashboard");
+        return;
+      }
+
+      // NORMAL GOOGLE USER
+      alert("Google Login Successful");
+      navigate("/");
+    } catch (error) {
+      console.error("Google login error:", error);
+
+      if (error.code === "auth/popup-closed-by-user") {
+        return;
+      }
+
+      if (error.code === "auth/popup-blocked") {
+        alert("The Google login popup was blocked by the browser.");
+        return;
+      }
+
+      alert("Unable to complete Google login. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // RESET PASSWORD
+  const handleResetPassword = async () => {
+    if (!email.trim()) {
+      alert("Please enter your email address first.");
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(
+        auth,
+        email.trim()
+      );
+
+      alert(
+        "Password reset email sent. Please check your inbox and spam folder."
+      );
+    } catch (error) {
+      console.error("Password reset error:", error);
+
+      if (error.code === "auth/invalid-email") {
+        alert("Please enter a valid email address.");
+      } else {
+        alert(
+          "Unable to send the password reset email. Please try again."
+        );
+      }
+    }
+  };
+
   return (
     <div style={styles.loginContainer}>
       <div style={styles.overlay}>
         <div style={styles.loginBox}>
-
-          <h2 style={styles.title}>Login Your Account</h2>
+          <h2 style={styles.title}>
+            Login Your Account
+          </h2>
 
           {/* EMAIL */}
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) =>
+              setEmail(e.target.value)
+            }
             placeholder="Enter Email"
             style={styles.input}
+            disabled={loading}
           />
 
           {/* PASSWORD */}
           <input
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
             placeholder="Enter Password"
             style={styles.input}
+            disabled={loading}
           />
 
-          {/* LOGIN BUTTON */}
-          <button onClick={handleLogin} style={styles.btn}>
-            Login
+          {/* LOGIN */}
+          <button
+            onClick={handleLogin}
+            style={styles.btn}
+            disabled={loading}
+          >
+            {loading ? "Please wait..." : "Login"}
           </button>
 
           {/* GOOGLE LOGIN */}
-          <button onClick={handleGoogleLogin} style={styles.googleBtn}>
+          <button
+            onClick={handleGoogleLogin}
+            style={styles.googleBtn}
+            disabled={loading}
+          >
             Continue with Google
           </button>
-          {/* FORGOT PASSWORD */}
-          <button onClick={handleResetPassword} style={styles.forgotLink}>
+
+          {/* RESET PASSWORD */}
+          <button
+            onClick={handleResetPassword}
+            style={styles.forgotLink}
+            disabled={loading}
+          >
             Forgot Password?
           </button>
-
-         
 
           {/* REGISTER */}
           <p style={styles.text}>
             Don't have an account?{" "}
-            <Link to="/register" style={styles.link}>
+            <Link
+              to="/register"
+              style={styles.link}
+            >
               Register Here
             </Link>
           </p>
-
         </div>
       </div>
     </div>
@@ -159,7 +266,6 @@ const handleLogin = async () => {
 }
 
 const styles = {
-
   loginContainer: {
     height: "100vh",
     backgroundImage:
@@ -199,6 +305,7 @@ const styles = {
     borderRadius: "5px",
     border: "none",
     fontSize: "16px",
+    boxSizing: "border-box",
   },
 
   btn: {
