@@ -1,7 +1,8 @@
 /* Google Font Import */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Playfair+Display:wght@600;700&display=swap');
 
-:root{
+/* Root variables for the main colors used throughout the website */
+:root {
   --main-black: #121212;
   --dark-gray: #1F1F1F;
   --deep-red: #8B0000;
@@ -9,14 +10,16 @@
   --cream: #F5F5DC;
 }
 
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:'Poppins', sans-serif;
+/* Reset default browser spacing and apply Poppins font to all elements */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
 }
 
-body{
+/* Set the main background color and text color for the page */
+body {
   background-color: var(--main-black);
   color: var(--cream);
 }
