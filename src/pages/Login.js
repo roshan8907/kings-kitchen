@@ -1,5 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useRef } from "react";
+
+import ReCAPTCHA from "react-google-recaptcha";
 
 import {
   signInWithEmailAndPassword,
@@ -27,8 +29,14 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
+
+  const captchaRef = useRef(null);
 
   const navigate = useNavigate();
+
+  const recaptchaSiteKey =
+    process.env.REACT_APP_RECAPTCHA_SITE_KEY;
 
   // SECURITY LOGGING
   const logSecurityEvent = async ({
@@ -46,7 +54,6 @@ function Login() {
         timestamp: serverTimestamp(),
       });
     } catch (logError) {
-      // Logging failure should not stop normal login behaviour.
       console.error(
         "Security logging error:",
         logError
@@ -54,10 +61,47 @@ function Login() {
     }
   };
 
+  // CAPTCHA SUCCESS
+  const handleCaptchaChange = (token) => {
+    setCaptchaToken(token);
+  };
+
+  // CAPTCHA EXPIRED
+  const handleCaptchaExpired = () => {
+    setCaptchaToken(null);
+  };
+
+  // CAPTCHA ERROR
+  const handleCaptchaError = () => {
+    setCaptchaToken(null);
+
+    alert(
+      "CAPTCHA could not be loaded. Please try again."
+    );
+  };
+
+  // Reset CAPTCHA
+  const resetCaptcha = () => {
+    setCaptchaToken(null);
+
+    if (captchaRef.current) {
+      captchaRef.current.reset();
+    }
+  };
+
   // EMAIL LOGIN
   const handleLogin = async () => {
     if (!email.trim() || !password) {
-      alert("Please enter your email and password.");
+      alert(
+        "Please enter your email and password."
+      );
+      return;
+    }
+
+    if (!captchaToken) {
+      alert(
+        "Please complete the CAPTCHA before logging in."
+      );
       return;
     }
 
@@ -81,7 +125,8 @@ function Login() {
         user.uid
       );
 
-      const userSnap = await getDoc(userRef);
+      const userSnap =
+        await getDoc(userRef);
 
       if (!userSnap.exists()) {
         await logSecurityEvent({
@@ -92,18 +137,25 @@ function Login() {
             "Authenticated account has no Firestore user record.",
         });
 
-        alert("Unable to verify your account.");
+        alert(
+          "Unable to verify your account."
+        );
+
         await signOut(auth);
+        resetCaptcha();
         return;
       }
 
       const userData = userSnap.data();
 
       // BLOCKED ACCOUNT
-      if (userData.status === "blocked") {
+      if (
+        userData.status === "blocked"
+      ) {
         await logSecurityEvent({
           event: "BLOCKED_LOGIN_ATTEMPT",
-          email: user.email || enteredEmail,
+          email:
+            user.email || enteredEmail,
           userId: user.uid,
           details:
             "Blocked account attempted email login.",
@@ -114,11 +166,14 @@ function Login() {
         );
 
         await signOut(auth);
+        resetCaptcha();
         return;
       }
 
       // ADMIN
-      if (userData.role === "admin") {
+      if (
+        userData.role === "admin"
+      ) {
         navigate("/dashboard");
         return;
       }
@@ -126,24 +181,32 @@ function Login() {
       // NORMAL USER
       navigate("/");
     } catch (error) {
-      console.error("Login error:", error);
+      console.error(
+        "Login error:",
+        error
+      );
 
       await logSecurityEvent({
         event: "LOGIN_FAILED",
         email: enteredEmail,
         details:
-          error.code || "Unknown authentication error",
+          error.code ||
+          "Unknown authentication error",
       });
 
       switch (error.code) {
         case "auth/invalid-credential":
         case "auth/wrong-password":
         case "auth/user-not-found":
-          alert("Invalid email or password.");
+          alert(
+            "Invalid email or password."
+          );
           break;
 
         case "auth/invalid-email":
-          alert("Please enter a valid email address.");
+          alert(
+            "Please enter a valid email address."
+          );
           break;
 
         case "auth/too-many-requests":
@@ -163,6 +226,8 @@ function Login() {
             "Unable to complete login. Please try again."
           );
       }
+
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -170,13 +235,21 @@ function Login() {
 
   // GOOGLE LOGIN
   const handleGoogleLogin = async () => {
+    if (!captchaToken) {
+      alert(
+        "Please complete the CAPTCHA before logging in."
+      );
+      return;
+    }
+
     try {
       setLoading(true);
 
-      const result = await signInWithPopup(
-        auth,
-        googleProvider
-      );
+      const result =
+        await signInWithPopup(
+          auth,
+          googleProvider
+        );
 
       const user = result.user;
 
@@ -186,14 +259,17 @@ function Login() {
         user.uid
       );
 
-      const userSnap = await getDoc(userRef);
+      const userSnap =
+        await getDoc(userRef);
 
       // NEW GOOGLE USER
       if (!userSnap.exists()) {
         await setDoc(userRef, {
           uid: user.uid,
-          fullName: user.displayName || "",
-          email: user.email || "",
+          fullName:
+            user.displayName || "",
+          email:
+            user.email || "",
           status: "active",
           role: "user",
         });
@@ -202,13 +278,19 @@ function Login() {
         return;
       }
 
-      const userData = userSnap.data();
+      const userData =
+        userSnap.data();
 
       // BLOCKED GOOGLE ACCOUNT
-      if (userData.status === "blocked") {
+      if (
+        userData.status ===
+        "blocked"
+      ) {
         await logSecurityEvent({
-          event: "BLOCKED_GOOGLE_LOGIN_ATTEMPT",
-          email: user.email || "",
+          event:
+            "BLOCKED_GOOGLE_LOGIN_ATTEMPT",
+          email:
+            user.email || "",
           userId: user.uid,
           details:
             "Blocked Google-authenticated account attempted login.",
@@ -219,11 +301,14 @@ function Login() {
         );
 
         await signOut(auth);
+        resetCaptcha();
         return;
       }
 
       // ADMIN GOOGLE ACCOUNT
-      if (userData.role === "admin") {
+      if (
+        userData.role === "admin"
+      ) {
         navigate("/dashboard");
         return;
       }
@@ -240,11 +325,13 @@ function Login() {
         error.code ===
         "auth/popup-closed-by-user"
       ) {
+        resetCaptcha();
         return;
       }
 
       await logSecurityEvent({
-        event: "GOOGLE_LOGIN_FAILED",
+        event:
+          "GOOGLE_LOGIN_FAILED",
         details:
           error.code ||
           "Unknown Google authentication error",
@@ -257,66 +344,71 @@ function Login() {
         alert(
           "The Google login popup was blocked by the browser."
         );
-        return;
+      } else {
+        alert(
+          "Unable to complete Google login. Please try again."
+        );
       }
 
-      alert(
-        "Unable to complete Google login. Please try again."
-      );
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
   };
 
   // PASSWORD RESET
-  const handleResetPassword = async () => {
-    if (!email.trim()) {
-      alert(
-        "Please enter your email address first."
-      );
-      return;
-    }
-
-    try {
-      await sendPasswordResetEmail(
-        auth,
-        email.trim()
-      );
-
-      alert(
-        "Password reset email sent. Please check your inbox and spam folder."
-      );
-    } catch (error) {
-      console.error(
-        "Password reset error:",
-        error
-      );
-
-      await logSecurityEvent({
-        event: "PASSWORD_RESET_FAILED",
-        email: email.trim(),
-        details:
-          error.code ||
-          "Unknown password reset error",
-      });
-
-      if (
-        error.code ===
-        "auth/invalid-email"
-      ) {
+  const handleResetPassword =
+    async () => {
+      if (!email.trim()) {
         alert(
-          "Please enter a valid email address."
+          "Please enter your email address first."
         );
-      } else {
-        alert(
-          "Unable to send the password reset email. Please try again."
-        );
+        return;
       }
-    }
-  };
+
+      try {
+        await sendPasswordResetEmail(
+          auth,
+          email.trim()
+        );
+
+        alert(
+          "Password reset email sent. Please check your inbox and spam folder."
+        );
+      } catch (error) {
+        console.error(
+          "Password reset error:",
+          error
+        );
+
+        await logSecurityEvent({
+          event:
+            "PASSWORD_RESET_FAILED",
+          email: email.trim(),
+          details:
+            error.code ||
+            "Unknown password reset error",
+        });
+
+        if (
+          error.code ===
+          "auth/invalid-email"
+        ) {
+          alert(
+            "Please enter a valid email address."
+          );
+        } else {
+          alert(
+            "Unable to send the password reset email. Please try again."
+          );
+        }
+      }
+    };
 
   return (
-    <div style={styles.loginContainer}>
+    <div
+      style={styles.loginContainer}
+    >
       <div style={styles.overlay}>
         <div style={styles.loginBox}>
 
@@ -324,54 +416,129 @@ function Login() {
             Login Your Account
           </h2>
 
+          {/* EMAIL */}
           <input
             type="email"
             value={email}
             onChange={(e) =>
-              setEmail(e.target.value)
+              setEmail(
+                e.target.value
+              )
             }
             placeholder="Enter Email"
             style={styles.input}
             disabled={loading}
           />
 
+          {/* PASSWORD */}
           <input
             type="password"
             value={password}
             onChange={(e) =>
-              setPassword(e.target.value)
+              setPassword(
+                e.target.value
+              )
             }
             placeholder="Enter Password"
             style={styles.input}
             disabled={loading}
           />
 
+          {/* CAPTCHA */}
+          <div style={styles.captchaContainer}>
+            {recaptchaSiteKey ? (
+              <ReCAPTCHA
+                ref={captchaRef}
+                sitekey={
+                  recaptchaSiteKey
+                }
+                onChange={
+                  handleCaptchaChange
+                }
+                onExpired={
+                  handleCaptchaExpired
+                }
+                onErrored={
+                  handleCaptchaError
+                }
+              />
+            ) : (
+              <p
+                style={
+                  styles.captchaError
+                }
+              >
+                CAPTCHA site key is not configured.
+              </p>
+            )}
+          </div>
+
+          {/* LOGIN */}
           <button
             onClick={handleLogin}
-            style={styles.btn}
-            disabled={loading}
+            style={{
+              ...styles.btn,
+              opacity:
+                loading ||
+                !captchaToken
+                  ? 0.6
+                  : 1,
+              cursor:
+                loading ||
+                !captchaToken
+                  ? "not-allowed"
+                  : "pointer",
+            }}
+            disabled={
+              loading ||
+              !captchaToken
+            }
           >
             {loading
               ? "Please wait..."
               : "Login"}
           </button>
 
+          {/* GOOGLE LOGIN */}
           <button
-            onClick={handleGoogleLogin}
-            style={styles.googleBtn}
-            disabled={loading}
+            onClick={
+              handleGoogleLogin
+            }
+            style={{
+              ...styles.googleBtn,
+              opacity:
+                loading ||
+                !captchaToken
+                  ? 0.6
+                  : 1,
+              cursor:
+                loading ||
+                !captchaToken
+                  ? "not-allowed"
+                  : "pointer",
+            }}
+            disabled={
+              loading ||
+              !captchaToken
+            }
           >
             Continue with Google
           </button>
 
+          {/* FORGOT PASSWORD */}
           <button
-            onClick={handleResetPassword}
-            style={styles.forgotLink}
+            onClick={
+              handleResetPassword
+            }
+            style={
+              styles.forgotLink
+            }
             disabled={loading}
           >
             Forgot Password?
           </button>
 
+          {/* REGISTER */}
           <p style={styles.text}>
             Don't have an account?{" "}
             <Link
@@ -391,90 +558,160 @@ function Login() {
 const styles = {
   loginContainer: {
     height: "100vh",
+
     backgroundImage:
       "url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4')",
+
     backgroundSize: "cover",
-    backgroundPosition: "center",
+
+    backgroundPosition:
+      "center",
   },
 
   overlay: {
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor:
+      "rgba(0,0,0,0.55)",
+
     width: "100%",
+
     height: "100%",
+
     display: "flex",
+
     justifyContent: "center",
+
     alignItems: "center",
   },
 
   loginBox: {
     width: "400px",
+
     backgroundColor:
       "rgba(255,255,255,0.08)",
+
     padding: "40px",
+
     borderRadius: "10px",
+
     textAlign: "center",
-    backdropFilter: "blur(5px)",
+
+    backdropFilter:
+      "blur(5px)",
   },
 
   title: {
     color: "#D4AF37",
+
     marginBottom: "30px",
+
     fontSize: "28px",
   },
 
   input: {
     width: "100%",
+
     padding: "15px",
+
     marginBottom: "20px",
+
     borderRadius: "5px",
+
     border: "none",
+
     fontSize: "16px",
-    boxSizing: "border-box",
+
+    boxSizing:
+      "border-box",
+  },
+
+  captchaContainer: {
+    display: "flex",
+
+    justifyContent:
+      "center",
+
+    marginBottom: "20px",
+
+    minHeight: "78px",
+  },
+
+  captchaError: {
+    color: "#ff6b6b",
+
+    fontSize: "13px",
+
+    margin: "10px 0",
   },
 
   btn: {
     width: "100%",
+
     padding: "15px",
-    backgroundColor: "#8B0000",
+
+    backgroundColor:
+      "#8B0000",
+
     color: "white",
+
     border: "none",
+
     fontSize: "18px",
-    cursor: "pointer",
+
     borderRadius: "5px",
   },
 
   forgotLink: {
     background: "none",
+
     border: "none",
+
     color: "#D4AF37",
+
     cursor: "pointer",
+
     marginTop: "10px",
+
     fontSize: "16px",
+
     fontWeight: "700",
-    textDecoration: "underline",
+
+    textDecoration:
+      "underline",
   },
 
   googleBtn: {
     width: "100%",
+
     padding: "15px",
+
     marginTop: "15px",
-    backgroundColor: "#ffffff",
+
+    backgroundColor:
+      "#ffffff",
+
     color: "#000",
+
     border: "none",
+
     fontSize: "16px",
-    cursor: "pointer",
+
     borderRadius: "5px",
+
     fontWeight: "bold",
   },
 
   text: {
     color: "white",
+
     marginTop: "20px",
   },
 
   link: {
     color: "#D4AF37",
-    textDecoration: "none",
+
+    textDecoration:
+      "none",
+
     fontWeight: "bold",
   },
 };
