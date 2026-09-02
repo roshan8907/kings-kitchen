@@ -1,12 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../firebase";
+
 import {
   collection,
   getDocs,
   doc,
   updateDoc,
+  query,
+  where,
 } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+
+import {
+  getAuth,
+  onAuthStateChanged,
+} from "firebase/auth";
 
 function MyReservations() {
   const [bookings, setBookings] = useState([]);
@@ -32,7 +39,9 @@ function MyReservations() {
 
       setBookings((prev) =>
         prev.map((b) =>
-          b.id === id ? { ...b, ...editData } : b
+          b.id === id
+            ? { ...b, ...editData }
+            : b
         )
       );
 
@@ -65,7 +74,10 @@ function MyReservations() {
       setBookings((prev) =>
         prev.map((booking) =>
           booking.id === id
-            ? { ...booking, status: "Cancelled" }
+            ? {
+                ...booking,
+                status: "Cancelled",
+              }
             : booking
         )
       );
@@ -74,47 +86,86 @@ function MyReservations() {
 
       alert("Reservation cancelled successfully.");
     } catch (error) {
-      console.error("Cancellation error:", error);
+      console.error(
+        "Cancellation error:",
+        error
+      );
       alert("Unable to cancel reservation.");
     }
   };
 
   // GET CURRENT USER RESERVATIONS
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const auth = getAuth();
-        const user = auth.currentUser;
+    const auth = getAuth();
 
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (user) => {
         if (!user) {
+          setBookings([]);
           return;
         }
 
-        const data = await getDocs(
-          collection(db, "reservations")
-        );
+        try {
+          /*
+           * IMPORTANT FIX:
+           * Only request reservations that belong
+           * to the currently logged-in user.
+           *
+           * This works with the A08 Firestore rules.
+           */
+          const reservationsRef = collection(
+            db,
+            "reservations"
+          );
 
-        const filtered = data.docs
-          .map((reservationDoc) => ({
-            id: reservationDoc.id,
-            ...reservationDoc.data(),
-          }))
-          .filter((item) => item.userId === user.uid);
+          const reservationsQuery = query(
+            reservationsRef,
+            where("userId", "==", user.uid)
+          );
 
-        setBookings(filtered);
-      } catch (error) {
-        console.error("Error loading reservations:", error);
+          const data = await getDocs(
+            reservationsQuery
+          );
+
+          const filtered = data.docs.map(
+            (reservationDoc) => ({
+              id: reservationDoc.id,
+              ...reservationDoc.data(),
+            })
+          );
+
+          setBookings(filtered);
+        } catch (error) {
+          console.error(
+            "Error loading reservations:",
+            error
+          );
+
+          setBookings([]);
+
+          if (
+            error.code ===
+            "permission-denied"
+          ) {
+            alert(
+              "You do not have permission to view these reservations."
+            );
+          }
+        }
       }
-    };
+    );
 
-    fetchData();
+    return () => unsubscribe();
   }, []);
 
   // Muskan Feature:
   // SEARCH + STATUS FILTER + SORT
   const displayedBookings = bookings
     .filter((booking) => {
-      const search = searchTerm.toLowerCase().trim();
+      const search = searchTerm
+        .toLowerCase()
+        .trim();
 
       const matchesSearch =
         (booking.fullName || "")
@@ -133,13 +184,22 @@ function MyReservations() {
 
       const matchesStatus =
         statusFilter === "all" ||
-        normalizedStatus === statusFilter;
+        normalizedStatus ===
+          statusFilter;
 
-      return matchesSearch && matchesStatus;
+      return (
+        matchesSearch &&
+        matchesStatus
+      );
     })
     .sort((a, b) => {
-      const dateA = new Date(a.date || 0);
-      const dateB = new Date(b.date || 0);
+      const dateA = new Date(
+        a.date || 0
+      );
+
+      const dateB = new Date(
+        b.date || 0
+      );
 
       if (sortOrder === "oldest") {
         return dateA - dateB;
@@ -163,36 +223,70 @@ function MyReservations() {
         minHeight: "100vh",
       }}
     >
-      <h2>My Reservation Status</h2>
+      <h2>
+        My Reservation Status
+      </h2>
 
       {/* SEARCH / FILTER / SORT */}
-      <div style={styles.filterContainer}>
+      <div
+        style={
+          styles.filterContainer
+        }
+      >
         <input
           type="text"
           placeholder="Search by name, date or time..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) =>
+            setSearchTerm(
+              e.target.value
+            )
+          }
           style={styles.searchInput}
         />
 
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) =>
+            setStatusFilter(
+              e.target.value
+            )
+          }
           style={styles.select}
         >
-          <option value="all">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="cancelled">Cancelled</option>
+          <option value="all">
+            All Statuses
+          </option>
+
+          <option value="pending">
+            Pending
+          </option>
+
+          <option value="confirmed">
+            Confirmed
+          </option>
+
+          <option value="cancelled">
+            Cancelled
+          </option>
         </select>
 
         <select
           value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
+          onChange={(e) =>
+            setSortOrder(
+              e.target.value
+            )
+          }
           style={styles.select}
         >
-          <option value="newest">Newest First</option>
-          <option value="oldest">Oldest First</option>
+          <option value="newest">
+            Newest First
+          </option>
+
+          <option value="oldest">
+            Oldest First
+          </option>
         </select>
 
         <button
@@ -204,7 +298,8 @@ function MyReservations() {
       </div>
 
       <p style={styles.resultText}>
-        Showing {displayedBookings.length} of{" "}
+        Showing{" "}
+        {displayedBookings.length} of{" "}
         {bookings.length} reservations
       </p>
 
@@ -212,7 +307,8 @@ function MyReservations() {
         <p>No bookings found</p>
       ) : displayedBookings.length === 0 ? (
         <div style={styles.noResults}>
-          No reservations match your search or filter.
+          No reservations match your
+          search or filter.
         </div>
       ) : (
         displayedBookings.map((b) => {
@@ -221,21 +317,28 @@ function MyReservations() {
             b.status === "cancelled";
 
           return (
-            <div key={b.id} style={styles.card}>
+            <div
+              key={b.id}
+              style={styles.card}
+            >
               <p>
-                <strong>Name:</strong> {b.fullName}
+                <strong>Name:</strong>{" "}
+                {b.fullName}
               </p>
 
               <p>
-                <strong>Date:</strong> {b.date}
+                <strong>Date:</strong>{" "}
+                {b.date}
               </p>
 
               <p>
-                <strong>Time:</strong> {b.time}
+                <strong>Time:</strong>{" "}
+                {b.time}
               </p>
 
               <p>
-                <strong>Guests:</strong> {b.guests}
+                <strong>Guests:</strong>{" "}
+                {b.guests}
               </p>
 
               <p>
@@ -257,13 +360,19 @@ function MyReservations() {
                 <button
                   onClick={() => {
                     setEditingId(b.id);
+
                     setEditData({
-                      date: b.date || "",
-                      time: b.time || "",
-                      guests: b.guests || "",
+                      date:
+                        b.date || "",
+                      time:
+                        b.time || "",
+                      guests:
+                        b.guests || "",
                     });
                   }}
-                  style={styles.editButton}
+                  style={
+                    styles.editButton
+                  }
                 >
                   Edit
                 </button>
@@ -272,8 +381,12 @@ function MyReservations() {
               {/* CANCEL */}
               {!isCancelled && (
                 <button
-                  onClick={() => handleCancel(b.id)}
-                  style={styles.cancelButton}
+                  onClick={() =>
+                    handleCancel(b.id)
+                  }
+                  style={
+                    styles.cancelButton
+                  }
                 >
                   Cancel Reservation
                 </button>
@@ -281,50 +394,72 @@ function MyReservations() {
 
               {/* EDIT FORM */}
               {editingId === b.id && (
-                <div style={styles.editForm}>
+                <div
+                  style={
+                    styles.editForm
+                  }
+                >
                   <input
-                    value={editData.date || ""}
+                    value={
+                      editData.date || ""
+                    }
                     onChange={(e) =>
                       setEditData({
                         ...editData,
-                        date: e.target.value,
+                        date:
+                          e.target.value,
                       })
                     }
                     type="date"
                   />
 
                   <input
-                    value={editData.time || ""}
+                    value={
+                      editData.time || ""
+                    }
                     onChange={(e) =>
                       setEditData({
                         ...editData,
-                        time: e.target.value,
+                        time:
+                          e.target.value,
                       })
                     }
                     placeholder="Time"
                   />
 
                   <input
-                    value={editData.guests || ""}
+                    value={
+                      editData.guests ||
+                      ""
+                    }
                     onChange={(e) =>
                       setEditData({
                         ...editData,
-                        guests: e.target.value,
+                        guests:
+                          e.target.value,
                       })
                     }
                     placeholder="Guests"
                   />
 
                   <button
-                    onClick={() => handleUpdate(b.id)}
-                    style={styles.saveButton}
+                    onClick={() =>
+                      handleUpdate(b.id)
+                    }
+                    style={
+                      styles.saveButton
+                    }
                   >
                     Save
                   </button>
 
                   <button
-                    onClick={() => setEditingId(null)}
-                    style={styles.closeButton}
+                    onClick={() =>
+                      setEditingId(null)
+                    }
+                    style={
+                      styles.closeButton
+                    }
                   >
                     Close
                   </button>
@@ -333,16 +468,30 @@ function MyReservations() {
 
               {/* FOOD ITEMS */}
               {b.orderItems &&
-                b.orderItems.length > 0 && (
-                  <div style={{ marginTop: "15px" }}>
-                    <h4>Food Items:</h4>
+                b.orderItems.length >
+                  0 && (
+                  <div
+                    style={{
+                      marginTop:
+                        "15px",
+                    }}
+                  >
+                    <h4>
+                      Food Items:
+                    </h4>
 
-                    {b.orderItems.map((item, index) => (
-                      <p key={index}>
-                        🍔 {item.name} ×{" "}
-                        {item.qty || 1} - ${item.price}
-                      </p>
-                    ))}
+                    {b.orderItems.map(
+                      (item, index) => (
+                        <p
+                          key={index}
+                        >
+                          🍔{" "}
+                          {item.name} ×{" "}
+                          {item.qty || 1}{" "}
+                          - ${item.price}
+                        </p>
+                      )
+                    )}
                   </div>
                 )}
             </div>
