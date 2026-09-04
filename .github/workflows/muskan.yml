@@ -1,25 +1,25 @@
- name: Muskan CI/CD Pipeline
- 
-on:
+name: Muskan CI/CD Pipeline
+
+"on":
   push:
     branches:
       - Muskan
- 
+
 jobs:
   build:
     runs-on: ubuntu-latest
- 
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
- 
+
       - name: Log in to Docker Hub
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
- 
+
       - name: Build Docker Image
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -27,7 +27,7 @@ jobs:
         run: |
           docker build -t $DOCKERHUB_USERNAME/kings-kitchen:$IMAGE_TAG .
           docker tag $DOCKERHUB_USERNAME/kings-kitchen:$IMAGE_TAG $DOCKERHUB_USERNAME/kings-kitchen:muskan
- 
+
       - name: Push Docker Image
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -35,22 +35,22 @@ jobs:
         run: |
           docker push $DOCKERHUB_USERNAME/kings-kitchen:$IMAGE_TAG
           docker push $DOCKERHUB_USERNAME/kings-kitchen:muskan
- 
+
   deploy:
     needs: build
     runs-on: self-hosted
- 
+
     steps:
       - name: Pull Muskan Docker Image
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
           docker pull $DOCKERHUB_USERNAME/kings-kitchen:muskan
- 
+
       - name: Stop Old Muskan Container
         run: |
           docker rm -f kings-kitchen-muskan || true
- 
+
       - name: Run Muskan Container
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -59,8 +59,7 @@ jobs:
             --name kings-kitchen-muskan \
             -p 3001:3000 \
             $DOCKERHUB_USERNAME/kings-kitchen:muskan
- 
+
       - name: Check Container
         run: |
           docker ps
-has context menu
