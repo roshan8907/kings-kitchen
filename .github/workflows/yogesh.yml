@@ -1,4 +1,4 @@
-name: Yogesh CI/CD
+name: CI/CD Pipeline
 
 on:
   push:
