@@ -1,0 +1,65 @@
+name: Yax CI/CD Pipeline
+
+"on":
+  push:
+    branches:
+      - yax
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+      - name: Build Docker Image
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG: yax-${{ github.sha }}
+        run: |
+          docker build -t $DOCKERHUB_USERNAME/kings-kitchen:$IMAGE_TAG .
+          docker tag $DOCKERHUB_USERNAME/kings-kitchen:$IMAGE_TAG $DOCKERHUB_USERNAME/kings-kitchen:yax
+
+      - name: Push Docker Image
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG: yax-${{ github.sha }}
+        run: |
+          docker push $DOCKERHUB_USERNAME/kings-kitchen:$IMAGE_TAG
+          docker push $DOCKERHUB_USERNAME/kings-kitchen:yax
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+
+    steps:
+      - name: Pull Yax Docker Image
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: |
+          docker pull $DOCKERHUB_USERNAME/kings-kitchen:yax
+
+      - name: Stop Old Yax Container
+        run: |
+          docker rm -f kings-kitchen-yax || true
+
+      - name: Run Yax Container
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: |
+          docker run -d \
+            --name kings-kitchen-yax \
+            -p 3002:3000 \
+            $DOCKERHUB_USERNAME/kings-kitchen:yax
+
+      - name: Check Container
+        run: |
+          docker ps
