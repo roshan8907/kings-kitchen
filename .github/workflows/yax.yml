@@ -3,7 +3,7 @@ name: Yax CI/CD Pipeline
 "on":
   push:
     branches:
-      - yax
+      - Yax
 
 jobs:
   build:
