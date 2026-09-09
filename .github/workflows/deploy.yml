@@ -11,10 +11,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -51,7 +51,7 @@ jobs:
     steps:
       - name: Pull latest Docker image
         run: |
-          docker pull roshan121923/kings-kitchen:latest
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/kings-kitchen:latest
 
       - name: Stop old container
         run: |
@@ -62,7 +62,7 @@ jobs:
           docker run -d \
             --name kings-kitchen \
             -p 3000:3000 \
-            roshan121923/kings-kitchen:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/kings-kitchen:latest
 
       - name: Check container
         run: |
