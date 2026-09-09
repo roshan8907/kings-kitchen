@@ -1,9 +1,8 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import { useNavigate } from "react-router-dom";
-import { db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 
 function Register() {
@@ -38,12 +37,16 @@ function Register() {
     }
 
     if (!/[A-Z]/.test(password)) {
-      setError("Password must contain at least one uppercase letter.");
+      setError(
+        "Password must contain at least one uppercase letter."
+      );
       return;
     }
 
     if (!/[0-9]/.test(password)) {
-      setError("Password must contain at least one number.");
+      setError(
+        "Password must contain at least one number."
+      );
       return;
     }
 
