@@ -1,43 +1,90 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import logo from "../assets/logo1.png";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (currentUser) => {
+        setUser(currentUser);
+
+        // No user logged in
+        if (!currentUser) {
+          setIsAdmin(false);
+          return;
+        }
+
+        // Check user's role in Firestore
+        try {
+          const userRef = doc(
+            db,
+            "users",
+            currentUser.uid
+          );
+
+          const userSnap = await getDoc(userRef);
+
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+
+            setIsAdmin(userData.role === "admin");
+          } else {
+            setIsAdmin(false);
+          }
+        } catch (error) {
+          console.error(
+            "Error checking admin role:",
+            error
+          );
+
+          setIsAdmin(false);
+        }
+      }
+    );
+
     return () => unsubscribe();
   }, []);
 
   const handleLogout = async () => {
     await signOut(auth);
     setUser(null);
+    setIsAdmin(false);
+    setMenuOpen(false);
   };
-
-  const isAdmin = user?.email === "admin@gmail.com";
 
   return (
     <>
       <nav style={styles.nav}>
+
         {/* LEFT */}
-        
         <div style={styles.left}>
-  <Link to="/" style={styles.logoLink}>
-    <img src={logo} alt="logo" style={styles.logoImg} />
-  </Link>
 
-  <Link to="/" style={styles.logoLink}>
-    <h2 style={styles.title}>The King's Kitchen</h2>
-  </Link>
-</div>
+          <Link to="/" style={styles.logoLink}>
+            <img
+              src={logo}
+              alt="logo"
+              style={styles.logoImg}
+            />
+          </Link>
 
-        {/* HAMBURGER (ONLY MOBILE) */}
+          <Link to="/" style={styles.logoLink}>
+            <h2 style={styles.title}>
+              The King's Kitchen
+            </h2>
+          </Link>
+
+        </div>
+
+
+        {/* HAMBURGER - MOBILE ONLY */}
         <div
           className="hamburger"
           style={styles.hamburger}
@@ -46,61 +93,169 @@ function Navbar() {
           ☰
         </div>
 
-        {/* DESKTOP MENU (ONLY DESKTOP) */}
-        <div className="desktopMenu" style={styles.desktopMenu}>
-          <Link style={styles.link} to="/">Home</Link>
-          <Link style={styles.link} to="/menu">Menu</Link>
-          <Link style={styles.link} to="/reservation">Reservation</Link>
-          <Link style={styles.link} to="/about">About</Link>
 
+        {/* DESKTOP MENU */}
+        <div
+          className="desktopMenu"
+          style={styles.desktopMenu}
+        >
+
+          {/* HOME */}
+          <Link
+            style={styles.link}
+            to="/"
+          >
+            Home
+          </Link>
+
+
+          {/* MENU */}
+          <Link
+            style={styles.link}
+            to={isAdmin ? "/admin/menu" : "/menu"}
+          >
+            Menu
+          </Link>
+
+
+          {/* RESERVATION */}
+          <Link
+            style={styles.link}
+            to={
+              isAdmin
+                ? "/admin/reservation"
+                : "/reservation"
+            }
+          >
+            Reservation
+          </Link>
+
+
+          {/* ABOUT */}
+          <Link
+            style={styles.link}
+            to="/about"
+          >
+            About
+          </Link>
+
+
+          {/* ADMIN DASHBOARD */}
           {isAdmin && (
-            <Link style={styles.link} to="/dashboard">Dashboard</Link>
+            <Link
+              style={styles.link}
+              to="/dashboard"
+            >
+              Dashboard
+            </Link>
           )}
 
+
+          {/* LOGIN / LOGOUT */}
           {user ? (
-            <button onClick={handleLogout} style={styles.logoutBtn}>
+            <button
+              onClick={handleLogout}
+              style={styles.logoutBtn}
+            >
               Logout
             </button>
           ) : (
-            <Link style={styles.loginBtn} to="/login">
+            <Link
+              style={styles.loginBtn}
+              to="/login"
+            >
               Login
             </Link>
           )}
+
         </div>
       </nav>
 
-      {/* MOBILE MENU (SLIDE) */}
+
+      {/* MOBILE MENU */}
       <div
         style={{
           ...styles.mobileMenu,
           right: menuOpen ? "0" : "-100%",
         }}
       >
-        <Link onClick={() => setMenuOpen(false)} style={styles.link} to="/">Home</Link>
-        <Link onClick={() => setMenuOpen(false)} style={styles.link} to="/menu">Menu</Link>
-        <Link onClick={() => setMenuOpen(false)} style={styles.link} to="/reservation">Reservation</Link>
-        <Link onClick={() => setMenuOpen(false)} style={styles.link} to="/about">About</Link>
 
+        {/* HOME */}
+        <Link
+          onClick={() => setMenuOpen(false)}
+          style={styles.link}
+          to="/"
+        >
+          Home
+        </Link>
+
+
+        {/* MENU */}
+        <Link
+          onClick={() => setMenuOpen(false)}
+          style={styles.link}
+          to={isAdmin ? "/admin/menu" : "/menu"}
+        >
+          Menu
+        </Link>
+
+
+        {/* RESERVATION */}
+        <Link
+          onClick={() => setMenuOpen(false)}
+          style={styles.link}
+          to={
+            isAdmin
+              ? "/admin/reservation"
+              : "/reservation"
+          }
+        >
+          Reservation
+        </Link>
+
+
+        {/* ABOUT */}
+        <Link
+          onClick={() => setMenuOpen(false)}
+          style={styles.link}
+          to="/about"
+        >
+          About
+        </Link>
+
+
+        {/* ADMIN DASHBOARD */}
         {isAdmin && (
-          <Link onClick={() => setMenuOpen(false)} style={styles.link} to="/dashboard">
+          <Link
+            onClick={() => setMenuOpen(false)}
+            style={styles.link}
+            to="/dashboard"
+          >
             Dashboard
           </Link>
         )}
 
+
+        {/* LOGIN / LOGOUT */}
         {user ? (
-          <button onClick={handleLogout} style={styles.logoutBtn}>
+          <button
+            onClick={handleLogout}
+            style={styles.logoutBtn}
+          >
             Logout
           </button>
         ) : (
           <Link
-  style={styles.loginBtn}
-  to="/login"
-  onClick={() => setMenuOpen(false)}
->
-  Login
-</Link>
+            style={styles.loginBtn}
+            to="/login"
+            onClick={() => setMenuOpen(false)}
+          >
+            Login
+          </Link>
         )}
+
       </div>
+
 
       {/* RESPONSIVE RULES */}
       <style>{`
@@ -108,6 +263,7 @@ function Navbar() {
           .desktopMenu {
             display: none !important;
           }
+
           .hamburger {
             display: block !important;
           }
@@ -117,6 +273,7 @@ function Navbar() {
           .hamburger {
             display: none !important;
           }
+
           .mobileMenu {
             display: none !important;
           }
@@ -126,7 +283,9 @@ function Navbar() {
   );
 }
 
+
 const styles = {
+
   nav: {
     display: "flex",
     justifyContent: "space-between",
@@ -141,8 +300,13 @@ const styles = {
     gap: "10px",
   },
 
-  logoImg: { height: "60px" },
-  title: { color: "#D4AF37" },
+  logoImg: {
+    height: "60px",
+  },
+
+  title: {
+    color: "#D4AF37",
+  },
 
   hamburger: {
     fontSize: "30px",
@@ -195,10 +359,12 @@ const styles = {
     borderRadius: "6px",
     cursor: "pointer",
   },
+
   logoLink: {
-  textDecoration: "none",
-  color: "inherit",
-},
+    textDecoration: "none",
+    color: "inherit",
+  },
+
 };
 
 export default Navbar;

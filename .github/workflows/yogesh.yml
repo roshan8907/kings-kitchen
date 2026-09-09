@@ -1,0 +1,69 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - Yogesh
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Automated Tests
+        run: npm test -- --watchAll=false
+
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+      - name: Build Docker Image
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: |
+          docker build -t $DOCKERHUB_USERNAME/kings-kitchen:yogesh .
+
+      - name: Push Docker Image
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: |
+          docker push $DOCKERHUB_USERNAME/kings-kitchen:yogesh
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+
+    steps:
+      - name: Pull Yogesh Docker Image
+        run: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/kings-kitchen:yogesh
+
+      - name: Stop Old Yogesh Container
+        run: |
+          docker rm -f kings-kitchen-yogesh || true
+
+      - name: Run Yogesh Container
+        run: |
+          docker run -d \
+            --name kings-kitchen-yogesh \
+            -p 3001:3000 \
+            ${{ secrets.DOCKERHUB_USERNAME }}/kings-kitchen:yogesh
+
+      - name: Check Container
+        run: |
+          docker ps
